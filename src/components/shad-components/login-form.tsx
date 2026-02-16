@@ -10,10 +10,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type LoginData = { email: string; password: string };
+
+type LoginFormProps = Omit<
+  React.ComponentPropsWithoutRef<"div">,
+  "onSubmit"
+> & {
+  onSubmit: (data: LoginData) => Promise<void> | void;
+  loading?: boolean;
+};
+
 export function LoginForm({
   className,
+  onSubmit,
+  loading,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: LoginFormProps) {
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    await onSubmit({ email, password });
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -21,7 +44,7 @@ export function LoginForm({
           <CardDescription>Login with your Luminite account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={handleSubmit}>
             <div className="grid gap-6">
               <div className="grid gap-6">
                 <div className="grid gap-2">
@@ -29,6 +52,7 @@ export function LoginForm({
                   <Input
                     id="email"
                     type="email"
+                    name="email"
                     placeholder="m@example.com"
                     required
                   />
@@ -43,10 +67,15 @@ export function LoginForm({
                       Forgot your password?
                     </a>
                   </div>
-                  <Input id="password" type="password" required />
+                  <Input
+                    id="password"
+                    type="password"
+                    name="password"
+                    required
+                  />
                 </div>
-                <Button type="submit" className="w-full">
-                  Login
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Logging in..." : "Login"}
                 </Button>
               </div>
               <div className="text-center text-sm">
