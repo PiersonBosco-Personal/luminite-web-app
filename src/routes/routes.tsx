@@ -6,6 +6,8 @@ const ProtectedRoute = lazy(() => import("../components/auth/ProtectedRoute"));
 const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
 
+const UserLayout = lazy(() => import("../components/layouts/UserLayout"));
+
 function AppRoutes() {
   return (
     <Suspense fallback={<CssSpinner />}>
@@ -15,7 +17,9 @@ function AppRoutes() {
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<UserLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<div>404 Not Found</div>} />
