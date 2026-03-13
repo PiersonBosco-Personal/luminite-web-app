@@ -1,5 +1,6 @@
 "use client"
 
+import { useAuth } from "../../contexts/AuthContext"
 import {
   BadgeCheck,
   Bell,
@@ -40,6 +41,14 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+
+   const { user: realUser, logout } = useAuth()
+
+  //---- For when we want to wire up the avatar to the database name rather than placeholders
+  // const displayName = realUser?.name || user.name;
+  // const displayEmail = realUser?.email || user.email;
+  // const displayAvatar = user.avatar;
+
 
   return (
     <SidebarMenu>
@@ -102,7 +111,8 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+                onClick={() => logout()} className="cursor-pointer">
               <LogOut />
               Log out
             </DropdownMenuItem>

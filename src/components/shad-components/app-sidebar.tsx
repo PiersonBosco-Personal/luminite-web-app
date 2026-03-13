@@ -43,7 +43,7 @@ const data = {
       icon: SquareTerminal,
       isActive: true,
       items: [
-        { title: "History", url: "#" },
+        { title: "Dashboard", url: "/dashboard" },
         { title: "Starred", url: "#" },
         { title: "Settings", url: "#" },
       ],
@@ -74,7 +74,7 @@ const data = {
       url: "#",
       icon: Settings2,
       items: [
-        { title: "General", url: "#" },
+        { title: "General", url: "/settings" },
         { title: "Team", url: "#" },
         { title: "Billing", url: "#" },
         { title: "Limits", url: "#" },
