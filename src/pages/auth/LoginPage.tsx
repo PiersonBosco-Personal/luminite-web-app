@@ -16,6 +16,7 @@ export default function LoginPage() {
     try {
       console.log("Attempting login with:", data);
       await login(data);
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
@@ -41,6 +42,11 @@ export default function LoginPage() {
             alt="Luminite Logo"
             className="w-48 h-48 mx-auto animate-fade-in drop-shadow-[0_0_12px_rgba(34,211,238,0.3)]"
           />
+          {error && (
+              <div className="text-red-500 text-sm font-medium text-center bg-red-500/10 p-2 rounded-md border border-red-500/20">
+                {error}
+              </div>
+          )}
           {/* DO WE WANT THIS TITLE? */}
           {/* <h1
             className="text-7xl font-bold text-center text-slate-100 

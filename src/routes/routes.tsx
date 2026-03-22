@@ -5,6 +5,7 @@ import CssSpinner from "../components/CssSpinner";
 const ProtectedRoute = lazy(() => import("../components/auth/ProtectedRoute"));
 const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
 const DashboardPage = lazy(() => import("../pages/Dashboard"));
+
 const UserLayout = lazy(() => import("../components/layouts/UserLayout"));
 
 function AppRoutes() {
@@ -16,10 +17,8 @@ function AppRoutes() {
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<UserLayout />}>
-            <Route index element={<DashboardPage />} />
-            {/* Later: */}
-            {/* <Route path="settings" element={<SettingsPage />} /> */}
+          <Route element={<UserLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
           </Route>
         </Route>
 
