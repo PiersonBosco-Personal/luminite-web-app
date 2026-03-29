@@ -6,7 +6,6 @@ interface User {
   id: number;
   name: string;
   email: string;
-  user_role_id: number;
 }
 
 interface AuthContextType {
@@ -25,13 +24,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      const response = await customAxios.get("/api/v1/auth/user");
+      const response = await customAxios.get("/v1/auth/user");
       setUser(response.data);
     } catch (error) {
       setUser(null);
-      console.error("Not authenticated or error fetching user", error);
     } finally {
       setIsLoading(false);
     }
@@ -43,17 +46,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (credentials: any) => {
     setIsLoading(true);
-    await customAxios.get("/sanctum/csrf-cookie");
     try {
-      const response = await customAxios.post(
-        "/api/v1/auth/login",
-        credentials,
-      );
+      const response = await customAxios.post("/v1/auth/login", credentials);
+      localStorage.setItem('auth_token', response.data.token);
       setUser(response.data.user);
-      // await fetchUser();
     } catch (error) {
-      setIsLoading(false);
-      console.error("Login failed:", error);
       setUser(null);
       throw error;
     } finally {
@@ -64,12 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     setIsLoading(true);
     try {
-      await customAxios.post("/api/v1/auth/logout");
-      setUser(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-      setUser(null);
+      await customAxios.post("/v1/auth/logout");
+    } catch {
+      // token may already be invalid — still clear locally
     } finally {
+      localStorage.removeItem('auth_token');
+      setUser(null);
       setIsLoading(false);
       window.location.href = "/";
     }
