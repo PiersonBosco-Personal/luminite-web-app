@@ -34,32 +34,22 @@ export default function LoginPage() {
   }, [user]);
 
   return (
-    <>
-      <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-full max-w-sm flex-col gap-6">
-          <img
-            src="/logo.png"
-            alt="Luminite Logo"
-            className="w-48 h-48 mx-auto animate-fade-in drop-shadow-[0_0_12px_rgba(34,211,238,0.3)]"
-          />
-          {error && (
-              <div className="text-red-500 text-sm font-medium text-center bg-red-500/10 p-2 rounded-md border border-red-500/20">
-                {error}
-              </div>
-          )}
-          {/* DO WE WANT THIS TITLE? */}
-          {/* <h1
-            className="text-7xl font-bold text-center text-slate-100 
-               drop-shadow-[0_0_12px_rgba(34,211,238,0.25)] 
-               animate-fade-in tracking-wide"
-          >
-            Luminite
-          </h1> */}
-          <div className="drop-shadow-[0_0_12px_rgba(34,211,238,0.2)]">
-            <LoginForm onSubmit={handleLogin} loading={loading} />
+    <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10 relative overflow-hidden">
+      {/* Ambient cyan glow behind the form */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_40%,rgba(46,187,204,0.07)_0%,transparent_100%)] pointer-events-none" />
+      <div className="relative flex w-full max-w-sm flex-col gap-5">
+        <img
+          src="/logo.png"
+          alt="Luminite Logo"
+          className="w-36 h-36 mx-auto drop-shadow-[0_0_24px_rgba(46,187,204,0.4)]"
+        />
+        {error && (
+          <div className="text-red-400 text-sm text-center bg-red-500/10 px-3 py-2.5 rounded-lg border border-red-500/20">
+            {error}
           </div>
-        </div>
+        )}
+        <LoginForm onSubmit={handleLogin} loading={loading} />
       </div>
-    </>
+    </div>
   );
 }
