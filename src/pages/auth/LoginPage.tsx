@@ -1,26 +1,25 @@
 import { LoginForm } from "@/components/shad-components/login-form";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
+  const { showSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
   const handleLogin = async (data: { email: string; password: string }) => {
     setLoading(true);
-    setError(null);
 
     try {
-      console.log("Attempting login with:", data);
       await login(data);
-      window.location.href = "/dashboard";
+      window.location.href = "/projects";
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          "Login failed. Please check your credentials.",
+      showSnackbar(
+        err?.response?.data?.message ?? "Login failed. Please check your credentials.",
+        "error"
       );
     } finally {
       setLoading(false);
@@ -29,7 +28,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      navigate("/projects");
     }
   }, [user]);
 
@@ -43,11 +42,6 @@ export default function LoginPage() {
           alt="Luminite Logo"
           className="w-36 h-36 mx-auto drop-shadow-[0_0_24px_rgba(46,187,204,0.4)]"
         />
-        {error && (
-          <div className="text-red-400 text-sm text-center bg-red-500/10 px-3 py-2.5 rounded-lg border border-red-500/20">
-            {error}
-          </div>
-        )}
         <LoginForm onSubmit={handleLogin} loading={loading} />
       </div>
     </div>
