@@ -8,6 +8,7 @@ const UserLayout = lazy(() => import("../components/layouts/UserLayout"));
 
 const ProjectsPage = lazy(() => import("../pages/projects/ProjectsPage"));
 const ProjectShell = lazy(() => import("../pages/projects/ProjectShell"));
+const DashboardPage = lazy(() => import("../pages/projects/DashboardPage"));
 const BoardPage = lazy(() => import("../pages/projects/BoardPage"));
 const NotesPage = lazy(() => import("../pages/projects/NotesPage"));
 const SettingsPage = lazy(() => import("../pages/projects/SettingsPage"));
@@ -24,7 +25,8 @@ function AppRoutes() {
           <Route element={<UserLayout />}>
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:projectId" element={<ProjectShell />}>
-              <Route index element={<Navigate to="board" replace />} />
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
               <Route path="board" element={<BoardPage />} />
               <Route path="notes" element={<NotesPage />} />
               <Route path="settings" element={<SettingsPage />} />

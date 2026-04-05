@@ -1,7 +1,14 @@
 import * as React from "react";
 import { Link, useLocation } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FolderKanban, Kanban, FileText, Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  FolderKanban,
+  Kanban,
+  FileText,
+  Settings,
+  LayoutGrid,
+} from "lucide-react";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -62,11 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         ) : (
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <img
-              src="/logo.png"
-              alt="Luminite"
-              className="h-7 w-7 shrink-0"
-            />
+            <img src="/logo.png" alt="Luminite" className="h-7 w-7 shrink-0" />
             <span className="font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
               Luminite
             </span>
@@ -78,6 +81,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {projectId ? (
           <SidebarGroup>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive("/dashboard")}
+                  tooltip="Dashboard"
+                >
+                  <Link to={`/projects/${projectId}/dashboard`}>
+                    <LayoutGrid />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild

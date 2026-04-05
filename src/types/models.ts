@@ -75,11 +75,26 @@ export interface TechStack {
   updated_at: string;
 }
 
+export interface Widget {
+  id: number;
+  slug: string;
+  name: string;
+  category: "productivity" | "analytics" | "team" | "ai";
+  description: string;
+  icon: string;
+  is_active: boolean;
+  default_w: number;
+  default_h: number;
+  min_w: number;
+  min_h: number;
+}
+
 export interface DashboardWidget {
   id: number;
   project_id: number;
-  type: string;
-  config: Record<string, unknown> | null;
+  user_id: number;
+  widget_id: number;
+  widget: Widget;
   grid_x: number;
   grid_y: number;
   grid_w: number;
