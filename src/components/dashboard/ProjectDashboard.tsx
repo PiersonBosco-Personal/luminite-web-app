@@ -10,6 +10,7 @@ import {
   syncLayout,
   removeDashboardWidget,
 } from "@/api/dashboard";
+import { getProject } from "@/api/projects";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { Button } from "@/components/ui/button";
 import { WidgetShell } from "./WidgetShell";
@@ -27,6 +28,11 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const { width, containerRef } = useContainerWidth();
+
+  const { data: project } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProject(projectId),
+  });
 
   const {
     data: widgets,
@@ -72,36 +78,29 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
     }, 800);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-center">
-        <p className="text-muted-foreground text-sm">
-          Failed to load dashboard.
-        </p>
-      </div>
-    );
-  }
-
   const isEmpty = !widgets || widgets.length === 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div ref={containerRef} className="flex flex-col h-full w-full">
       <DashboardToolbar
+        projectName={project?.name}
         isEditing={isEditing}
         onToggleEdit={() => setIsEditing((v) => !v)}
         onAddWidget={() => setPickerOpen(true)}
         isSaving={syncMutation.isPending}
       />
 
-      {isEmpty ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <p className="text-muted-foreground text-sm">
+            Failed to load dashboard.
+          </p>
+        </div>
+      ) : isEmpty ? (
         <div className="flex flex-col items-center justify-center flex-1 py-24 text-center">
           <LayoutGrid className="h-14 w-14 text-muted-foreground/20 mb-4" />
           <h2 className="text-base font-semibold">Your dashboard is empty</h2>
@@ -119,35 +118,33 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
           </Button>
         </div>
       ) : (
-        <div ref={containerRef} className="w-full">
-          <GridLayout
-            width={width}
-            layout={layout}
-            gridConfig={{
-              cols: 12,
-              rowHeight: 80,
-              margin: [12, 12],
-              containerPadding: [0, 0],
-            }}
-            dragConfig={{
-              enabled: isEditing,
-              handle: ".widget-drag-handle",
-            }}
-            resizeConfig={{ enabled: isEditing }}
-            onLayoutChange={onLayoutChange}
-          >
-            {widgets.map((widget) => (
-              <div key={String(widget.id)}>
-                <WidgetShell
-                  widget={widget}
-                  projectId={projectId}
-                  isEditing={isEditing}
-                  onRemove={() => removeMutation.mutate(widget.id)}
-                />
-              </div>
-            ))}
-          </GridLayout>
-        </div>
+        <GridLayout
+          width={width}
+          layout={layout}
+          gridConfig={{
+            cols: 12,
+            rowHeight: 80,
+            margin: [12, 12],
+            containerPadding: [0, 0],
+          }}
+          dragConfig={{
+            enabled: isEditing,
+            handle: ".widget-drag-handle",
+          }}
+          resizeConfig={{ enabled: isEditing }}
+          onLayoutChange={onLayoutChange}
+        >
+          {widgets.map((widget) => (
+            <div key={String(widget.id)}>
+              <WidgetShell
+                widget={widget}
+                projectId={projectId}
+                isEditing={isEditing}
+                onRemove={() => removeMutation.mutate(widget.id)}
+              />
+            </div>
+          ))}
+        </GridLayout>
       )}
 
       <WidgetPicker

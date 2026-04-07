@@ -45,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isActive = (segment: string) => location.pathname.includes(segment);
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" className="shadow-[4px_0_24px_rgba(0,0,0,0.55)]" {...props}>
       <SidebarHeader>
         {projectId ? (
           <div className="flex flex-col gap-1 px-1 py-1">
@@ -68,7 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 px-2 py-1.5">
+          <div className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <img src="/logo.png" alt="Luminite" className="h-7 w-7 shrink-0" />
             <span className="font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
               Luminite
@@ -157,7 +157,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   {projects.map((p) => (
                     <SidebarMenuItem key={p.id}>
                       <SidebarMenuButton asChild>
-                        <Link to={`/projects/${p.id}/board`}>
+                        <Link to={`/projects/${p.id}/dashboard`}>
                           <span>{p.name}</span>
                         </Link>
                       </SidebarMenuButton>

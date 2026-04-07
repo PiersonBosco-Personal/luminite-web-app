@@ -2,6 +2,7 @@ import { Pencil, CheckCheck, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardToolbarProps {
+  projectName?: string;
   isEditing: boolean;
   onToggleEdit: () => void;
   onAddWidget: () => void;
@@ -9,6 +10,7 @@ interface DashboardToolbarProps {
 }
 
 export function DashboardToolbar({
+  projectName,
   isEditing,
   onToggleEdit,
   onAddWidget,
@@ -17,7 +19,9 @@ export function DashboardToolbar({
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2.5">
-        <h1 className="text-lg font-semibold tracking-tight">Dashboard</h1>
+        <h1 className="text-lg font-semibold tracking-tight">
+          {projectName ?? "…"} Dashboard
+        </h1>
         {isSaving && (
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />

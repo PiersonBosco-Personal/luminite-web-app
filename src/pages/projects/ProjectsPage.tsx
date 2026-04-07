@@ -24,7 +24,7 @@ function ProjectCard({ project }: { project: Project }) {
   return (
     <Card
       className="cursor-pointer hover:bg-accent/50 transition-colors"
-      onClick={() => navigate(`/projects/${project.id}/board`)}
+      onClick={() => navigate(`/projects/${project.id}/dashboard`)}
     >
       <CardHeader className="pb-2">
         <CardTitle className="text-base">{project.name}</CardTitle>
@@ -98,7 +98,7 @@ export default function ProjectsPage() {
       setName("");
       setDescription("");
       showSnackbar("Project created.", "success");
-      navigate(`/projects/${newProject.id}/board`);
+      navigate(`/projects/${newProject.id}/dashboard`);
     },
     onError: (error: any) => {
       showSnackbar(
@@ -115,7 +115,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">My Projects</h1>

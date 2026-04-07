@@ -234,12 +234,13 @@ const Sidebar = React.forwardRef<
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-            "group-data-[collapsible=offcanvas]:w-0",
+            "relative bg-transparent transition-[width] duration-200 ease-linear",
             "group-data-[side=right]:rotate-180",
-            variant === "floating" || variant === "inset"
-              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+            collapsible === "icon"
+              ? variant === "floating" || variant === "inset"
+                ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
+                : "w-(--sidebar-width-icon)"
+              : "w-(--sidebar-width) group-data-[collapsible=offcanvas]:w-0"
           )}
         />
         <div
