@@ -8,6 +8,8 @@ export interface Project {
   id: number;
   name: string;
   description: string | null;
+  goals: string | null;
+  architecture_notes: string | null;
   status: "active" | "archived";
   owner: User;
   members?: (User & { pivot?: { role: "owner" | "member" } })[];
@@ -69,8 +71,10 @@ export interface Label {
 export interface TechStack {
   id: number;
   project_id: number;
+  parent_id: number | null;
   name: string;
-  app_label: "frontend" | "backend" | "mobile" | "other";
+  version: string | null;
+  children?: TechStack[];
   created_at: string;
   updated_at: string;
 }

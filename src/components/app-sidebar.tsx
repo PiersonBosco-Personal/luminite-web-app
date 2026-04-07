@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   FolderKanban,
-  Kanban,
+  Info,
   FileText,
   Settings,
   LayoutGrid,
@@ -96,12 +96,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={isActive("/board")}
-                  tooltip="Board"
+                  isActive={isActive("/details")}
+                  tooltip="Details"
                 >
-                  <Link to={`/projects/${projectId}/board`}>
-                    <Kanban />
-                    <span>Board</span>
+                  <Link to={`/projects/${projectId}/details`}>
+                    <Info />
+                    <span>Details</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
