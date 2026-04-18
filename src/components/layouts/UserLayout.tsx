@@ -7,15 +7,13 @@ export default function UserLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+    <SidebarProvider className="h-full" open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <AppSidebar
         onMouseEnter={() => setSidebarOpen(true)}
         onMouseLeave={() => setSidebarOpen(false)}
       />
-      <SidebarInset>
-        <div className="flex flex-1 flex-col p-4">
-          <Outlet />
-        </div>
+      <SidebarInset className="overflow-hidden">
+        <Outlet />
       </SidebarInset>
     </SidebarProvider>
   );

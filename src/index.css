@@ -104,7 +104,8 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  height: 100svh;
+  overflow: hidden;
 }
 
 @theme inline {
@@ -155,6 +156,168 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ── Tiptap editor styles ────────────────────────────────────────────────── */
+
+.note-editor .ProseMirror {
+  padding: 1.5rem 2rem;
+  min-height: 100%;
+  outline: none;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--foreground);
+}
+
+.note-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+.note-editor .ProseMirror h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--foreground);
+}
+
+.note-editor .ProseMirror h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--foreground);
+}
+
+.note-editor .ProseMirror h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1rem 0 0.4rem;
+  color: var(--foreground);
+}
+
+.note-editor .ProseMirror p {
+  margin: 0.4rem 0;
+}
+
+.note-editor .ProseMirror ul,
+.note-editor .ProseMirror ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.note-editor .ProseMirror li {
+  margin: 0.2rem 0;
+}
+
+.note-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--lum-midblue);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.note-editor .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.25rem 0;
+}
+
+.note-editor .ProseMirror code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--muted);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+  color: var(--lum-lightblue);
+}
+
+.note-editor .ProseMirror pre {
+  background: #0d1520;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.note-editor .ProseMirror pre code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.85rem;
+  background: transparent;
+  padding: 0;
+  color: #c9d1d9;
+}
+
+/* Syntax highlight token colors */
+.note-editor .ProseMirror pre .hljs-keyword,
+.note-editor .ProseMirror pre .hljs-selector-tag { color: #ff7b72; }
+.note-editor .ProseMirror pre .hljs-string,
+.note-editor .ProseMirror pre .hljs-attr { color: #a5d6ff; }
+.note-editor .ProseMirror pre .hljs-number,
+.note-editor .ProseMirror pre .hljs-literal { color: #79c0ff; }
+.note-editor .ProseMirror pre .hljs-comment { color: #8b949e; font-style: italic; }
+.note-editor .ProseMirror pre .hljs-function,
+.note-editor .ProseMirror pre .hljs-title { color: #d2a8ff; }
+.note-editor .ProseMirror pre .hljs-variable,
+.note-editor .ProseMirror pre .hljs-name { color: #ffa657; }
+.note-editor .ProseMirror pre .hljs-built_in { color: #2ebbcc; }
+.note-editor .ProseMirror pre .hljs-type { color: #7ee787; }
+.note-editor .ProseMirror pre .hljs-punctuation { color: #c9d1d9; }
+
+/* Task list */
+.note-editor .ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+
+.note-editor .ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.note-editor .ProseMirror ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  margin-top: 0.3rem;
+}
+
+.note-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--lum-midblue);
+  border-radius: 3px;
+  cursor: pointer;
+  background: transparent;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.note-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+  background: var(--lum-lightblue);
+  border-color: var(--lum-lightblue);
+}
+
+.note-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  top: -2px;
+  left: 1px;
+  font-size: 11px;
+  color: var(--primary-foreground);
+  font-weight: 700;
+}
+
+.note-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  opacity: 0.55;
+  text-decoration: line-through;
 }
 
 /* react-grid-layout theme overrides */

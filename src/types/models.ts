@@ -46,14 +46,26 @@ export interface Task {
   updated_at: string;
 }
 
+export interface NoteFolder {
+  id: number;
+  project_id: number;
+  created_by: number;
+  name: string;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Note {
   id: number;
   project_id: number;
+  folder_id: number | null;
   task_id: number | null;
   author?: User;
   title: string;
   content: unknown;
   is_pinned: boolean;
+  position: number;
   labels?: Label[];
   created_at: string;
   updated_at: string;
