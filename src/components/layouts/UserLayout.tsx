@@ -12,7 +12,7 @@ export default function UserLayout() {
         onMouseEnter={() => setSidebarOpen(true)}
         onMouseLeave={() => setSidebarOpen(false)}
       />
-      <SidebarInset className="overflow-hidden">
+      <SidebarInset className="overflow-y-auto">
         <Outlet />
       </SidebarInset>
     </SidebarProvider>

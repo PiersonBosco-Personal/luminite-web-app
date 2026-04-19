@@ -81,7 +81,7 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
   const isEmpty = !widgets || widgets.length === 0;
 
   return (
-    <div ref={containerRef} className="flex flex-col h-full w-full">
+    <div ref={containerRef} className="flex flex-col h-full w-full p-4">
       <DashboardToolbar
         projectName={project?.name}
         isEditing={isEditing}

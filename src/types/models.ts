@@ -28,19 +28,23 @@ export interface TaskSection {
   updated_at: string;
 }
 
+export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
+
 export interface Task {
   id: number;
   project_id: number;
   section_id: number;
   parent_task_id: number | null;
-  assignee?: User | null;
+  assigned_to: number | null;
   title: string;
   description: string | null;
-  status: "todo" | "in_progress" | "done" | "blocked";
-  priority: "low" | "medium" | "high" | "urgent";
+  status: TaskStatus;
+  priority: TaskPriority;
   due_date: string | null;
   position: number;
   labels?: Label[];
+  subtasks?: Task[];
   subtasks_count?: number;
   created_at: string;
   updated_at: string;

@@ -79,7 +79,7 @@ function NoteItem({
         "w-full flex items-center gap-2 px-2 py-1 rounded text-left text-sm truncate transition-colors",
         "hover:bg-accent/20",
         selected && !isDragging && "bg-accent/30 text-foreground",
-        isDragging && "cursor-grabbing"
+        isDragging && "cursor-grabbing",
       )}
     >
       <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -199,7 +199,7 @@ function FolderRow({
         ref={setDropRef}
         className={cn(
           "flex items-center gap-0.5 group/folder px-1 py-0.5 rounded transition-colors",
-          isOver ? "bg-accent/30" : "hover:bg-muted/30"
+          isOver ? "bg-accent/30" : "hover:bg-muted/30",
         )}
       >
         <CollapsibleTrigger asChild>
@@ -207,7 +207,7 @@ function FolderRow({
             <ChevronRight
               className={cn(
                 "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                open && "rotate-90"
+                open && "rotate-90",
               )}
             />
             {open ? (
@@ -252,7 +252,11 @@ function FolderRow({
           </button>
           <button
             onClick={() => {
-              if (confirm(`Delete folder "${folder.name}"? Notes will be moved to root.`))
+              if (
+                confirm(
+                  `Delete folder "${folder.name}"? Notes will be moved to root.`,
+                )
+              )
                 deleteMutation.mutate();
             }}
             title="Delete folder"
@@ -292,15 +296,21 @@ function FolderRow({
 
 // ── Root drop zone ─────────────────────────────────────────────────────────────
 
-function RootDropZone({ children, isEmpty }: { children: React.ReactNode; isEmpty: boolean }) {
+function RootDropZone({
+  children,
+  isEmpty,
+}: {
+  children: React.ReactNode;
+  isEmpty: boolean;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: "root" });
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "min-h-[2rem] rounded transition-colors",
+        "min-h-8 rounded transition-colors",
         isOver && "bg-accent/10",
-        isEmpty && isOver && "border border-dashed border-accent/40 py-2"
+        isEmpty && isOver && "border border-dashed border-accent/40 py-2",
       )}
     >
       {children}
@@ -346,7 +356,7 @@ export default function NotesPage() {
   useEffect(() => {
     if (notesQuery.data && activeId === null) {
       setLocalNotes(
-        [...notesQuery.data].sort((a, b) => a.position - b.position)
+        [...notesQuery.data].sort((a, b) => a.position - b.position),
       );
     }
   }, [notesQuery.data, activeId]);
@@ -424,7 +434,7 @@ export default function NotesPage() {
       showSnackbar("Failed to reorder note", "error");
       if (notesQuery.data)
         setLocalNotes(
-          [...notesQuery.data].sort((a, b) => a.position - b.position)
+          [...notesQuery.data].sort((a, b) => a.position - b.position),
         );
     },
   });
@@ -449,7 +459,7 @@ export default function NotesPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
-    })
+    }),
   );
 
   function handleDragStart({ active }: DragStartEvent) {
@@ -472,9 +482,10 @@ export default function NotesPage() {
       const withoutActive = localNotes.filter((n) => n.id !== activeNote.id);
       const lastInTarget = withoutActive.reduce(
         (idx, n, i) => (n.folder_id === targetFolderId ? i : idx),
-        -1
+        -1,
       );
-      const insertAt = lastInTarget === -1 ? withoutActive.length : lastInTarget + 1;
+      const insertAt =
+        lastInTarget === -1 ? withoutActive.length : lastInTarget + 1;
       const updated = [...withoutActive];
       updated.splice(insertAt, 0, { ...activeNote, folder_id: targetFolderId });
       setLocalNotes(updated);
@@ -487,7 +498,7 @@ export default function NotesPage() {
       const withoutActive = localNotes.filter((n) => n.id !== activeNote.id);
       const lastRoot = withoutActive.reduce(
         (idx, n, i) => (n.folder_id === null ? i : idx),
-        -1
+        -1,
       );
       const insertAt = lastRoot === -1 ? withoutActive.length : lastRoot + 1;
       const updated = [...withoutActive];
@@ -524,7 +535,7 @@ export default function NotesPage() {
 
     // Compute fractional position from neighbors in final group
     const group = localNotes.filter(
-      (n) => n.folder_id === activeNote.folder_id
+      (n) => n.folder_id === activeNote.folder_id,
     );
     const idx = group.findIndex((n) => n.id === activeNote.id);
     const prev = group[idx - 1];
@@ -546,16 +557,15 @@ export default function NotesPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const isLoading = foldersQuery.isLoading || notesQuery.isLoading;
-  const activeNote = activeId !== null
-    ? localNotes.find((n) => n.id === activeId) ?? null
-    : null;
+  const activeNote =
+    activeId !== null
+      ? (localNotes.find((n) => n.id === activeId) ?? null)
+      : null;
 
   return (
     <div className="flex h-full overflow-hidden">
-
       {/* ━━━━━━━━━━━━━━━━━━ PART 1: Notes sidebar ━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="flex flex-col w-64 shrink-0 border-r border-border overflow-hidden">
-
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-3 py-2.5 border-b border-border shrink-0">
           <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">
@@ -632,9 +642,8 @@ export default function NotesPage() {
                   </div>
                 )}
 
-                {(folders.length > 0 || creatingFolder) && rootNotes.length > 0 && (
-                  <Separator className="my-1" />
-                )}
+                {(folders.length > 0 || creatingFolder) &&
+                  rootNotes.length > 0 && <Separator className="my-1" />}
 
                 <SortableContext
                   id="root"
@@ -653,21 +662,25 @@ export default function NotesPage() {
                   </RootDropZone>
                 </SortableContext>
 
-                {folders.length === 0 && rootNotes.length === 0 && !creatingFolder && (
-                  <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
-                    <FileText className="h-8 w-8 text-muted-foreground/30" />
-                    <p className="text-xs text-muted-foreground">No notes yet</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => newNoteMutation.mutate()}
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      Create first note
-                    </Button>
-                  </div>
-                )}
+                {folders.length === 0 &&
+                  rootNotes.length === 0 &&
+                  !creatingFolder && (
+                    <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+                      <FileText className="h-8 w-8 text-muted-foreground/30" />
+                      <p className="text-xs text-muted-foreground">
+                        No notes yet
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={() => newNoteMutation.mutate()}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Create first note
+                      </Button>
+                    </div>
+                  )}
               </div>
 
               <DragOverlay>
@@ -689,7 +702,6 @@ export default function NotesPage() {
 
       {/* ━━━━━━━━━━━━━━━━━━ PARTS 2 + 3: Right column ━━━━━━━━━━━━━━━━━━━━ */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-
         {/* PART 2: Title + toolbar */}
         <div className="shrink-0">
           <div className="flex items-center gap-2 px-6 py-3 border-b border-border">
@@ -713,7 +725,7 @@ export default function NotesPage() {
                       "h-7 w-7 p-0",
                       selectedNote.is_pinned
                         ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                     title={selectedNote.is_pinned ? "Unpin" : "Pin"}
                     onClick={() => pinMutation.mutate()}
