@@ -36,7 +36,7 @@ export interface Task {
   project_id: number;
   section_id: number;
   parent_task_id: number | null;
-  assigned_to: number | null;
+  assignee: User | null;
   title: string;
   description: string | null;
   status: TaskStatus;

@@ -98,7 +98,7 @@ export function TaskColumn({
       <div
         ref={setSortableRef}
         style={sectionStyle}
-        className={`group/col flex flex-col min-w-[180px] flex-1 max-w-[260px] h-full transition-all duration-150
+        className={`group/col flex flex-col min-w-[180px] flex-1 h-full transition-all duration-150
           ${isSectionDragging ? "opacity-40 scale-[0.98]" : ""}
           ${isDropTarget ? "ring-2 ring-primary/60 ring-inset rounded-md" : ""}
         `}

@@ -5,6 +5,7 @@ export interface WidgetProps {
   widget: DashboardWidget;
   projectId: number;
   isEditing: boolean;
+  setHeaderActions?: (actions: React.ReactNode) => void;
 }
 
 import { TasksBoardWidget } from "./widgets/TasksBoardWidget";

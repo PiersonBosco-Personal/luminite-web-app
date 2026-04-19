@@ -30,7 +30,7 @@ import type { WidgetProps } from "../widgetRegistry";
 
 type SectionWithTasks = TaskSection & { tasks: Task[] };
 
-export function TasksBoardWidget({ widget: _widget, projectId, isEditing }: WidgetProps) {
+export function TasksBoardWidget({ widget: _widget, projectId, isEditing, setHeaderActions }: WidgetProps) {
   const queryClient = useQueryClient();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [activeSection, setActiveSection] = useState<SectionWithTasks | null>(null);
@@ -41,6 +41,32 @@ export function TasksBoardWidget({ widget: _widget, projectId, isEditing }: Widg
   const [newSectionName, setNewSectionName] = useState("");
 
   const [localSections, setLocalSections] = useState<SectionWithTasks[] | null>(null);
+
+  useEffect(() => {
+    if (!setHeaderActions || isEditing) {
+      setHeaderActions?.(null);
+      return;
+    }
+    setHeaderActions(
+      addingSection ? (
+        <button
+          onClick={() => { setNewSectionName(""); setAddingSection(false); }}
+          className="text-xs text-muted-foreground/60 hover:text-muted-foreground px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors"
+        >
+          Cancel
+        </button>
+      ) : (
+        <button
+          onClick={() => setAddingSection(true)}
+          className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-muted-foreground px-1.5 py-0.5 rounded hover:bg-muted/50 transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          Section
+        </button>
+      )
+    );
+    return () => setHeaderActions?.(null);
+  }, [setHeaderActions, isEditing, addingSection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -284,29 +310,29 @@ export function TasksBoardWidget({ widget: _widget, projectId, isEditing }: Widg
           items={sections.map((s) => `section-${s.id}`)}
           strategy={horizontalListSortingStrategy}
         >
-          <div className="flex gap-2 h-full overflow-x-auto px-3 pt-2 pb-3 group">
-            {sections.map((section) => (
-              <TaskColumn
-                key={section.id}
-                section={section}
-                projectId={projectId}
-                isEditing={isEditing}
-                isDraggingSection={activeSection !== null}
-                isDropTarget={overSectionId === section.id}
-                onTaskOpen={handleTaskOpen}
-                onSectionRename={(id, name) => updateSectionMutation.mutate({ id, name })}
-                onSectionDelete={(id) => deleteSectionMutation.mutate(id)}
-                onTaskCreate={(sectionId, title) =>
-                  createTaskMutation.mutate({ sectionId, title })
-                }
-              />
-            ))}
+          <div className="h-full overflow-x-auto">
+            <div className="flex gap-2 h-full min-w-full px-3 pt-2 pb-3 group">
+              {sections.map((section) => (
+                <TaskColumn
+                  key={section.id}
+                  section={section}
+                  projectId={projectId}
+                  isEditing={isEditing}
+                  isDraggingSection={activeSection !== null}
+                  isDropTarget={overSectionId === section.id}
+                  onTaskOpen={handleTaskOpen}
+                  onSectionRename={(id, name) => updateSectionMutation.mutate({ id, name })}
+                  onSectionDelete={(id) => deleteSectionMutation.mutate(id)}
+                  onTaskCreate={(sectionId, title) =>
+                    createTaskMutation.mutate({ sectionId, title })
+                  }
+                />
+              ))}
 
-            {/* Add section — compact */}
-            {!isEditing && (
-              <div className="shrink-0 self-start pt-5">
-                {addingSection ? (
-                  <div className="flex flex-col gap-1 w-40">
+              {/* New section inline input — shown when addingSection is true */}
+              {addingSection && !isEditing && (
+                <div className="shrink-0 self-start pt-5 w-40">
+                  <div className="flex flex-col gap-1">
                     <input
                       autoFocus
                       value={newSectionName}
@@ -336,23 +362,15 @@ export function TasksBoardWidget({ widget: _widget, projectId, isEditing }: Widg
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingSection(true)}
-                    className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-muted-foreground px-1 py-1 rounded hover:bg-muted/30 whitespace-nowrap transition-colors"
-                  >
-                    <Plus className="w-3 h-3" />
-                    Section
-                  </button>
-                )}
-              </div>
-            )}
+                </div>
+              )}
 
-            {sections.length === 0 && !addingSection && !isEditing && (
-              <div className="flex items-center justify-center w-full text-xs text-muted-foreground/50">
-                No sections yet — add one to get started
-              </div>
-            )}
+              {sections.length === 0 && !addingSection && !isEditing && (
+                <div className="flex items-center justify-center w-full text-xs text-muted-foreground/50">
+                  No sections yet — add one to get started
+                </div>
+              )}
+            </div>
           </div>
         </SortableContext>
 

@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from "react";
 import { GripVertical, X } from "lucide-react";
 import type { DashboardWidget } from "@/types/models";
 import { widgetRegistry } from "./widgetRegistry";
@@ -13,6 +14,7 @@ interface WidgetShellProps {
 export function WidgetShell({ widget, projectId, isEditing, onRemove }: WidgetShellProps) {
   const WidgetComponent = widgetRegistry[widget.widget.slug];
   const Icon = slugIconMap[widget.widget.slug];
+  const [headerActions, setHeaderActions] = useState<ReactNode>(null);
 
   return (
     <div className="h-full flex flex-col rounded-lg border bg-card overflow-hidden">
@@ -30,21 +32,24 @@ export function WidgetShell({ widget, projectId, isEditing, onRemove }: WidgetSh
           <span className="text-xs font-medium truncate">{widget.widget.name}</span>
         </div>
 
-        {isEditing && (
-          <button
-            onClick={onRemove}
-            className="text-muted-foreground/50 hover:text-destructive transition-colors ml-2 shrink-0"
-            aria-label="Remove widget"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
+        <div className="flex items-center gap-1 ml-2 shrink-0">
+          {!isEditing && headerActions}
+          {isEditing && (
+            <button
+              onClick={onRemove}
+              className="text-muted-foreground/50 hover:text-destructive transition-colors"
+              aria-label="Remove widget"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-auto min-h-0">
         {WidgetComponent ? (
-          <WidgetComponent widget={widget} projectId={projectId} isEditing={isEditing} />
+          <WidgetComponent widget={widget} projectId={projectId} isEditing={isEditing} setHeaderActions={setHeaderActions} />
         ) : (
           <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
             Unknown widget: {widget.widget.slug}
