@@ -23,7 +23,11 @@ interface TaskCardProps {
   isDragOverlay?: boolean;
 }
 
-export function TaskCard({ task, onOpen, isDragOverlay = false }: TaskCardProps) {
+export function TaskCard({
+  task,
+  onOpen,
+  isDragOverlay = false,
+}: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -68,19 +72,30 @@ export function TaskCard({ task, onOpen, isDragOverlay = false }: TaskCardProps)
       <div className="pl-3">
         {/* Status dot + title */}
         <div className="flex items-start gap-1.5">
-          <span className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[task.status]}`} />
-          <p className="leading-snug text-foreground/90 line-clamp-2">{task.title}</p>
+          <span
+            className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[task.status]}`}
+          />
+          <p className="leading-snug text-foreground/90 line-clamp-2">
+            {task.title}
+          </p>
         </div>
 
         {/* Meta row */}
-        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${PRIORITY_STYLES[task.priority]}`}>
+        <div className="flex flex-row flex-wrap items-center gap-1.5 mt-1.5">
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${PRIORITY_STYLES[task.priority]}`}
+          >
             {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
           </span>
 
           {task.due_date && (
-            <span className={`text-[10px] ${isOverdue ? "text-red-400" : "text-muted-foreground"}`}>
-              {new Date(task.due_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            <span
+              className={`text-[10px] ${isOverdue ? "text-red-400" : "text-muted-foreground"}`}
+            >
+              {new Date(task.due_date).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })}
             </span>
           )}
 
@@ -99,7 +114,10 @@ export function TaskCard({ task, onOpen, isDragOverlay = false }: TaskCardProps)
               <span
                 key={label.id}
                 className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                style={{ backgroundColor: label.color + "33", color: label.color }}
+                style={{
+                  backgroundColor: label.color + "33",
+                  color: label.color,
+                }}
               >
                 {label.name}
               </span>
@@ -108,19 +126,21 @@ export function TaskCard({ task, onOpen, isDragOverlay = false }: TaskCardProps)
         )}
 
         {/* Subtask progress bar */}
-        {(task.subtasks_count ?? 0) > 0 && (() => {
-          const total = task.subtasks?.length ?? task.subtasks_count ?? 0;
-          const done = task.subtasks?.filter((s) => s.status === "done").length ?? 0;
-          const pct = total > 0 ? (done / total) * 100 : 0;
-          return (
-            <div className="mt-2 w-full h-1 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary/60 rounded-full transition-all duration-300"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          );
-        })()}
+        {(task.subtasks_count ?? 0) > 0 &&
+          (() => {
+            const total = task.subtasks?.length ?? task.subtasks_count ?? 0;
+            const done =
+              task.subtasks?.filter((s) => s.status === "done").length ?? 0;
+            const pct = total > 0 ? (done / total) * 100 : 0;
+            return (
+              <div className="mt-2 w-full h-1 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary/60 rounded-full transition-all duration-300"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            );
+          })()}
       </div>
     </div>
   );

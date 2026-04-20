@@ -3,7 +3,10 @@ import { createPortal } from "react-dom";
 import { useDroppable } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Plus, Pencil, Trash2, Check, X, GripHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,7 +101,7 @@ export function TaskColumn({
       <div
         ref={setSortableRef}
         style={sectionStyle}
-        className={`group/col flex flex-col min-w-[180px] flex-1 h-full transition-all duration-150
+        className={`group/col flex flex-col min-w-45 flex-1 h-full transition-all duration-150
           ${isSectionDragging ? "opacity-40 scale-[0.98]" : ""}
           ${isDropTarget ? "ring-2 ring-primary/60 ring-inset rounded-md" : ""}
         `}
@@ -110,7 +113,7 @@ export function TaskColumn({
             <div
               {...attributes}
               {...listeners}
-              className="opacity-0 group-hover/col:opacity-40 hover:!opacity-100 cursor-grab active:cursor-grabbing text-muted-foreground shrink-0"
+              className="opacity-0 group-hover/col:opacity-40 hover:opacity-100! cursor-grab active:cursor-grabbing text-muted-foreground shrink-0"
               title="Drag to reorder section"
             >
               <GripHorizontal className="w-3 h-3" />
@@ -125,14 +128,26 @@ export function TaskColumn({
                 onChange={(e) => setRenameValue(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") commitRename();
-                  if (e.key === "Escape") { setRenameValue(section.name); setRenaming(false); }
+                  if (e.key === "Escape") {
+                    setRenameValue(section.name);
+                    setRenaming(false);
+                  }
                 }}
                 className="h-6 text-xs px-1.5 py-0"
               />
-              <button onClick={commitRename} className="text-emerald-400 hover:text-emerald-300">
+              <button
+                onClick={commitRename}
+                className="text-emerald-400 hover:text-emerald-300"
+              >
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => { setRenameValue(section.name); setRenaming(false); }} className="text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => {
+                  setRenameValue(section.name);
+                  setRenaming(false);
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -141,11 +156,14 @@ export function TaskColumn({
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex-1 truncate">
                 {section.name}
               </p>
-              <span className="text-[10px] text-muted-foreground/60">{tasks.length}</span>
+              {/* <span className="text-[10px] text-muted-foreground/60">{tasks.length}</span> */}
               {!isEditing && (
                 <>
                   <button
-                    onClick={() => { setRenameValue(section.name); setRenaming(true); }}
+                    onClick={() => {
+                      setRenameValue(section.name);
+                      setRenaming(true);
+                    }}
                     className="opacity-0 group-hover/col:opacity-100 text-muted-foreground hover:text-foreground"
                     title="Rename section"
                   >
@@ -167,7 +185,7 @@ export function TaskColumn({
         {/* Tasks list — scrollable */}
         <div
           ref={setDropRef}
-          className={`flex flex-col gap-1.5 flex-1 overflow-y-auto rounded-md border px-1.5 py-1.5 min-h-[60px] transition-colors
+          className={`flex flex-col gap-1.5 flex-1 overflow-y-auto rounded-md border px-1.5 py-1.5 min-h-15 transition-colors
             ${!isDraggingSection && isOver ? "border-primary/50 bg-primary/5" : "border-border/30 bg-background/20"}
           `}
         >
@@ -200,18 +218,28 @@ export function TaskColumn({
                   className="h-7 text-xs"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") commitAddTask();
-                    if (e.key === "Escape") { setNewTaskTitle(""); setAddingTask(false); }
+                    if (e.key === "Escape") {
+                      setNewTaskTitle("");
+                      setAddingTask(false);
+                    }
                   }}
                 />
                 <div className="flex gap-1">
-                  <Button size="sm" className="h-6 text-xs flex-1" onClick={commitAddTask}>
+                  <Button
+                    size="sm"
+                    className="h-6 text-xs flex-1"
+                    onClick={commitAddTask}
+                  >
                     Add
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-6 text-xs"
-                    onClick={() => { setNewTaskTitle(""); setAddingTask(false); }}
+                    onClick={() => {
+                      setNewTaskTitle("");
+                      setAddingTask(false);
+                    }}
                   >
                     Cancel
                   </Button>
@@ -230,33 +258,47 @@ export function TaskColumn({
         )}
       </div>
 
-      {confirmDelete && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setConfirmDelete(false)} />
-          <div className="relative z-10 rounded-xl border border-border bg-card shadow-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="font-semibold text-foreground mb-1">Delete section?</h3>
-            <p className="text-sm text-muted-foreground mb-5">
-              This will permanently delete <span className="font-medium text-foreground">"{section.name}"</span> and all its tasks.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  onSectionDelete(section.id);
-                  setConfirmDelete(false);
-                }}
-              >
-                Delete
-              </Button>
+      {confirmDelete &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/70"
+              onClick={() => setConfirmDelete(false)}
+            />
+            <div className="relative z-10 rounded-xl border border-border bg-card shadow-2xl p-6 max-w-sm w-full mx-4">
+              <h3 className="font-semibold text-foreground mb-1">
+                Delete section?
+              </h3>
+              <p className="text-sm text-muted-foreground mb-5">
+                This will permanently delete{" "}
+                <span className="font-medium text-foreground">
+                  "{section.name}"
+                </span>{" "}
+                and all its tasks.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    onSectionDelete(section.id);
+                    setConfirmDelete(false);
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

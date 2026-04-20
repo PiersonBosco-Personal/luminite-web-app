@@ -1,29 +1,75 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Plus, Trash2, Paperclip, Check, UserCircle } from "lucide-react";
+import {
+  X,
+  Plus,
+  Trash2,
+  Paperclip,
+  Check,
+  Tag,
+  ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DatePicker } from "@/components/ui/date-picker";
 import { getTask, updateTask, createTask, deleteTask } from "@/api/tasks";
 import { getProject } from "@/api/projects";
+import {
+  getLabels,
+  attachLabelToTask,
+  detachLabelFromTask,
+} from "@/api/labels";
 import type { Task, TaskStatus, TaskPriority } from "@/types/models";
 
-const STATUS_OPTIONS: { value: TaskStatus; label: string; color: string }[] = [
-  { value: "todo", label: "To Do", color: "text-slate-400" },
-  { value: "in_progress", label: "In Progress", color: "text-blue-400" },
-  { value: "done", label: "Done", color: "text-emerald-400" },
-  { value: "blocked", label: "Blocked", color: "text-red-400" },
+const STATUS_OPTIONS: {
+  value: TaskStatus;
+  label: string;
+  color: string;
+  dot: string;
+}[] = [
+  {
+    value: "todo",
+    label: "To Do",
+    color: "text-slate-400",
+    dot: "bg-slate-400",
+  },
+  {
+    value: "in_progress",
+    label: "In Progress",
+    color: "text-blue-400",
+    dot: "bg-blue-400",
+  },
+  {
+    value: "done",
+    label: "Done",
+    color: "text-emerald-400",
+    dot: "bg-emerald-400",
+  },
+  {
+    value: "blocked",
+    label: "Blocked",
+    color: "text-red-400",
+    dot: "bg-red-400",
+  },
 ];
 
 const PRIORITY_OPTIONS: {
   value: TaskPriority;
   label: string;
   color: string;
+  bg: string;
 }[] = [
-  { value: "urgent", label: "Urgent", color: "text-red-400" },
-  { value: "high", label: "High", color: "text-orange-400" },
-  { value: "medium", label: "Medium", color: "text-yellow-400" },
-  { value: "low", label: "Low", color: "text-slate-400" },
+  { value: "urgent", label: "Urgent", color: "text-red-400", bg: "#f87171" },
+  { value: "high", label: "High", color: "text-orange-400", bg: "#fb923c" },
+  { value: "medium", label: "Medium", color: "text-yellow-400", bg: "#facc15" },
+  { value: "low", label: "Low", color: "text-slate-400", bg: "#94a3b8" },
 ];
 
 interface TaskDetailModalProps {
@@ -62,6 +108,29 @@ export function TaskDetailModal({
   });
 
   const members = project?.members ?? [];
+
+  const { data: allLabels = [] } = useQuery({
+    queryKey: ["labels", projectId],
+    queryFn: () => getLabels(projectId),
+    enabled: open,
+  });
+
+  const taskLabelIds = new Set((task?.labels ?? []).map((l) => l.id));
+
+  function toggleLabel(labelId: number) {
+    if (!taskId) return;
+    if (taskLabelIds.has(labelId)) {
+      detachLabelFromTask(projectId, labelId, taskId).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+        onTaskUpdated();
+      });
+    } else {
+      attachLabelToTask(projectId, labelId, taskId).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+        onTaskUpdated();
+      });
+    }
+  }
 
   useEffect(() => {
     if (task) {
@@ -210,72 +279,199 @@ export function TaskDetailModal({
               {/* Meta row */}
               <div className="flex flex-wrap gap-2 items-center">
                 {/* Status */}
-                <select
-                  value={task.status}
-                  onChange={(e) =>
-                    updateMutation.mutate({
-                      status: e.target.value as TaskStatus,
-                    })
-                  }
-                  className="text-xs bg-muted border border-border rounded px-2 py-1 text-foreground cursor-pointer"
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                {(() => {
+                  const current = STATUS_OPTIONS.find(
+                    (s) => s.value === task.status,
+                  )!;
+                  return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/60 hover:bg-muted hover:border-border transition-colors text-xs font-medium text-foreground">
+                          <span
+                            className={`w-2 h-2 rounded-full shrink-0 ${current.dot}`}
+                          />
+                          {current.label}
+                          <ChevronDown className="w-3 h-3 text-muted-foreground ml-0.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="min-w-[140px]"
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <DropdownMenuItem
+                            key={s.value}
+                            onSelect={() =>
+                              updateMutation.mutate({ status: s.value })
+                            }
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`}
+                            />
+                            <span
+                              className={
+                                s.value === task.status ? "font-medium" : ""
+                              }
+                            >
+                              {s.label}
+                            </span>
+                            {s.value === task.status && (
+                              <Check className="w-3 h-3 ml-auto" />
+                            )}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                })()}
 
                 {/* Priority */}
-                <select
-                  value={task.priority}
-                  onChange={(e) =>
-                    updateMutation.mutate({
-                      priority: e.target.value as TaskPriority,
-                    })
-                  }
-                  className="text-xs bg-muted border border-border rounded px-2 py-1 text-foreground cursor-pointer"
-                >
-                  {PRIORITY_OPTIONS.map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
+                {(() => {
+                  const current = PRIORITY_OPTIONS.find(
+                    (p) => p.value === task.priority,
+                  )!;
+                  return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-md border transition-colors text-xs font-medium"
+                          style={{
+                            backgroundColor: current.bg + "22",
+                            borderColor: current.bg + "55",
+                            color: current.bg,
+                          }}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: current.bg }}
+                          />
+                          {current.label}
+                          <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="min-w-[130px]"
+                      >
+                        {PRIORITY_OPTIONS.map((p) => (
+                          <DropdownMenuItem
+                            key={p.value}
+                            onSelect={() =>
+                              updateMutation.mutate({ priority: p.value })
+                            }
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: p.bg }}
+                            />
+                            <span
+                              style={{ color: p.bg }}
+                              className={
+                                p.value === task.priority ? "font-medium" : ""
+                              }
+                            >
+                              {p.label}
+                            </span>
+                            {p.value === task.priority && (
+                              <Check className="w-3 h-3 ml-auto" />
+                            )}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                })()}
 
                 {/* Due date */}
-                <input
-                  type="date"
-                  value={task.due_date ?? ""}
-                  onChange={(e) =>
-                    updateMutation.mutate({ due_date: e.target.value || null })
-                  }
-                  className="text-xs bg-muted border border-border rounded px-2 py-1 text-foreground cursor-pointer"
+                <DatePicker
+                  value={task.due_date ?? null}
+                  onChange={(val) => updateMutation.mutate({ due_date: val })}
                 />
 
                 {/* Assignee */}
-                <div className="flex items-center gap-1.5">
-                  <UserCircle className="w-3.5 h-3.5 text-muted-foreground" />
-                  <select
-                    value={task.assignee?.id ?? ""}
-                    onChange={(e) =>
-                      updateMutation.mutate({
-                        assigned_to: e.target.value
-                          ? Number(e.target.value)
-                          : null,
-                      })
-                    }
-                    className="text-xs bg-muted border border-border rounded px-2 py-1 text-foreground cursor-pointer"
-                  >
-                    <option value="">Unassigned</option>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-border/60 hover:bg-muted hover:border-border transition-colors text-xs font-medium text-foreground">
+                      {task.assignee ? (
+                        <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-[10px] font-semibold text-primary shrink-0">
+                          {task.assignee.name.charAt(0).toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full bg-muted border border-border/60 flex items-center justify-center text-[10px] text-muted-foreground shrink-0">
+                          —
+                        </span>
+                      )}
+                      <span>{task.assignee?.name ?? "Unassigned"}</span>
+                      <ChevronDown className="w-3 h-3 text-muted-foreground ml-0.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[160px]">
+                    <DropdownMenuItem
+                      onSelect={() =>
+                        updateMutation.mutate({ assigned_to: null })
+                      }
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="w-5 h-5 rounded-full bg-muted border border-border/60 flex items-center justify-center text-[10px] text-muted-foreground shrink-0">
+                        —
+                      </span>
+                      <span className="text-muted-foreground">Unassigned</span>
+                      {!task.assignee && <Check className="w-3 h-3 ml-auto" />}
+                    </DropdownMenuItem>
                     {members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
+                      <DropdownMenuItem
+                        key={m.id}
+                        onSelect={() =>
+                          updateMutation.mutate({ assigned_to: m.id })
+                        }
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-[10px] font-semibold text-primary shrink-0">
+                          {m.name.charAt(0).toUpperCase()}
+                        </span>
+                        <span>{m.name}</span>
+                        {task.assignee?.id === m.id && (
+                          <Check className="w-3 h-3 ml-auto" />
+                        )}
+                      </DropdownMenuItem>
                     ))}
-                  </select>
-                </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
+
+              {/* Labels */}
+              {allLabels.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  {allLabels.map((label) => {
+                    const active = taskLabelIds.has(label.id);
+                    return (
+                      <button
+                        key={label.id}
+                        onClick={() => toggleLabel(label.id)}
+                        className="text-xs px-2 py-0.5 rounded-full border transition-all"
+                        style={
+                          active
+                            ? {
+                                backgroundColor: label.color + "33",
+                                borderColor: label.color,
+                                color: label.color,
+                              }
+                            : {
+                                backgroundColor: "transparent",
+                                borderColor: "hsl(var(--border))",
+                                color: "hsl(var(--muted-foreground))",
+                              }
+                        }
+                      >
+                        {label.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Separator */}
               <div className="border-t border-border/50" />
