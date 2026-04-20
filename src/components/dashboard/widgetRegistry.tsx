@@ -11,6 +11,7 @@ export interface WidgetProps {
 import { TasksBoardWidget } from "./widgets/TasksBoardWidget";
 import { TasksListWidget } from "./widgets/TasksListWidget";
 import { NotesListWidget } from "./widgets/NotesListWidget";
+import { DailyNotesWidget } from "./widgets/DailyNotesWidget";
 import { ActivityFeedWidget } from "./widgets/ActivityFeedWidget";
 import { TechStackWidget } from "./widgets/TechStackWidget";
 import { TeamPresenceWidget } from "./widgets/TeamPresenceWidget";
@@ -24,6 +25,7 @@ export const widgetRegistry: Record<string, React.ComponentType<WidgetProps>> = 
   tasks_board: TasksBoardWidget,
   tasks_list: TasksListWidget,
   notes_list: NotesListWidget,
+  daily_notes: DailyNotesWidget,
   activity_feed: ActivityFeedWidget,
   tech_stack: TechStackWidget,
   team_presence: TeamPresenceWidget,
