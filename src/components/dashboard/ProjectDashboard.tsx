@@ -83,6 +83,7 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
   return (
     <div ref={containerRef} className="flex flex-col h-full w-full p-4">
       <DashboardToolbar
+        projectId={projectId}
         projectName={project?.name}
         isEditing={isEditing}
         onToggleEdit={() => setIsEditing((v) => !v)}

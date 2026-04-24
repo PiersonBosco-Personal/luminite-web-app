@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getSocketId } from './echo';
 
 const customAxios = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -16,6 +17,12 @@ customAxios.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const socketId = getSocketId();
+  if (socketId) {
+    config.headers['X-Socket-ID'] = socketId;
+  }
+
   return config;
 });
 

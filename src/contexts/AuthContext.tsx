@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import customAxios from "../lib/customAxios";
+import { disconnectEcho, initEcho } from "../lib/echo";
 
 interface User {
   id: number;
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await customAxios.get("/v1/auth/user");
       setUser(response.data);
+      initEcho(token);
     } catch (error) {
       setUser(null);
     } finally {
@@ -49,6 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await customAxios.post("/v1/auth/login", credentials);
       localStorage.setItem('auth_token', response.data.token);
+      initEcho(response.data.token);
       setUser(response.data.user);
     } catch (error) {
       setUser(null);
@@ -65,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // token may already be invalid — still clear locally
     } finally {
+      disconnectEcho();
       localStorage.removeItem('auth_token');
       setUser(null);
       setIsLoading(false);

@@ -2,10 +2,13 @@ import { Navigate, Outlet, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { getProject } from "@/api/projects";
+import { useProjectChannel } from "@/hooks/useProjectChannel";
 
 export default function ProjectShell() {
   const { projectId } = useParams<{ projectId: string }>();
   const id = parseInt(projectId ?? "");
+
+  useProjectChannel(id);
 
   const { isLoading, isError } = useQuery({
     queryKey: ["project", id],
@@ -27,7 +30,9 @@ export default function ProjectShell() {
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-64 text-center p-6">
-        <p className="text-muted-foreground">Project not found or you don't have access.</p>
+        <p className="text-muted-foreground">
+          Project not found or you don't have access.
+        </p>
       </div>
     );
   }

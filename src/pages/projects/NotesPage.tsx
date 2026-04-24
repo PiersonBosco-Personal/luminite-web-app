@@ -331,6 +331,7 @@ export default function NotesPage() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const isTitleFocusedRef = useRef(false);
 
   // Local notes array — source of truth for DnD ordering
   const [localNotes, setLocalNotes] = useState<Note[]>([]);
@@ -364,6 +365,13 @@ export default function NotesPage() {
   useEffect(() => {
     setTitle(selectedNote?.title ?? "");
   }, [selectedNote?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync title from external changes (another user renamed this note)
+  useEffect(() => {
+    if (!isTitleFocusedRef.current) {
+      setTitle(selectedNote?.title ?? "");
+    }
+  }, [selectedNote?.title]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectedId === null && localNotes.length > 0)
@@ -710,7 +718,11 @@ export default function NotesPage() {
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  onBlur={handleTitleBlur}
+                  onFocus={() => { isTitleFocusedRef.current = true; }}
+                  onBlur={() => {
+                    isTitleFocusedRef.current = false;
+                    handleTitleBlur();
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") e.currentTarget.blur();
                   }}
