@@ -328,14 +328,17 @@ body {
   opacity: 1 !important;
 }
 
-.react-resizable-handle {
+/* All resize handles — same icon as the default SE corner, z-index above card */
+.react-grid-item .react-resizable-handle {
+  z-index: 10;
   opacity: 0.3;
   transition: opacity 0.15s;
 }
 
-.react-resizable-handle:hover {
+.react-grid-item .react-resizable-handle:hover {
   opacity: 0.7;
 }
+
 
 .react-grid-item.react-draggable-dragging {
   opacity: 0.85;

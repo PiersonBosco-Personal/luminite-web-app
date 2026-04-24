@@ -132,7 +132,7 @@ export function ProjectDashboard({ projectId }: ProjectDashboardProps) {
             enabled: isEditing,
             handle: ".widget-drag-handle",
           }}
-          resizeConfig={{ enabled: isEditing }}
+          resizeConfig={{ enabled: isEditing, handles: ["se", "sw", "nw"] }}
           onLayoutChange={onLayoutChange}
         >
           {widgets.map((widget) => (
