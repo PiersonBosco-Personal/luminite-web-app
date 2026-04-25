@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import("../pages/projects/DashboardPage"));
 const DetailsPage = lazy(() => import("../pages/projects/DetailsPage"));
 const NotesPage = lazy(() => import("../pages/projects/NotesPage"));
 const SettingsPage = lazy(() => import("../pages/projects/SettingsPage"));
+const InvitePage = lazy(() => import("../pages/InvitePage"));
 
 function AppRoutes() {
   return (
@@ -19,6 +20,7 @@ function AppRoutes() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<LoginPage />} />
+        <Route path="/invite/:token" element={<InvitePage />} />
 
         {/* Protected */}
         <Route element={<ProtectedRoute />}>
