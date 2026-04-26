@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Loader2, NotebookPen } from "lucide-react";
-import { createFolder, createNote, getFolders, getNotes } from "@/api/notes";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { createFolder, createNote, getFolders, getNotes, updateNote } from "@/api/notes";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { EditorToolbar } from "@/components/notes/EditorToolbar";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
+import type { Note } from "@/types/models";
 import type { WidgetProps } from "../widgetRegistry";
 
 const DAILY_FOLDER = "Daily Notes";
@@ -23,7 +24,11 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
   const [dailyFolderId, setDailyFolderId] = useState<number | null>(null);
   const [todayNoteId, setTodayNoteId] = useState<number | null>(null);
   const folderInitRef = useRef(false);
-  const noteCreationAttempted = useRef(false);
+  const creatingNoteRef = useRef(false);
+  const dailyFolderIdRef = useRef<number | null>(null);
+  dailyFolderIdRef.current = dailyFolderId;
+  const todayNoteIdRef = useRef<number | null>(null);
+  todayNoteIdRef.current = todayNoteId;
 
   const foldersQuery = useQuery({
     queryKey: ["note-folders", projectId],
@@ -59,33 +64,50 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
     }
   }, [foldersQuery.data, projectId, queryClient]);
 
-  // Step 2: find or create today's note — never surfaces yesterday's
+  // Step 2: find today's note if it already exists — never auto-create
   useEffect(() => {
     if (!notesQuery.data || dailyFolderId === null) return;
-
     const today = getTodayTitle();
     const existing = notesQuery.data.find((n) => n.title === today);
+    if (existing) setTodayNoteId(existing.id);
+  }, [notesQuery.data, dailyFolderId]);
 
-    if (existing) {
-      setTodayNoteId(existing.id);
-      return;
-    }
+  // Create today's note on first keystroke rather than on mount
+  useEffect(() => {
+    if (!editor) return;
 
-    if (noteCreationAttempted.current) return;
-    noteCreationAttempted.current = true;
+    const handleFirstInput = async () => {
+      if (todayNoteIdRef.current !== null || creatingNoteRef.current || dailyFolderIdRef.current === null) return;
+      creatingNoteRef.current = true;
 
-    createNote(projectId, { title: today, folder_id: dailyFolderId }).then((note) => {
-      queryClient.invalidateQueries({
-        queryKey: ["notes", projectId, { folder_id: dailyFolderId }],
-      });
-      setTodayNoteId(note.id);
-    });
-  }, [notesQuery.data, dailyFolderId, projectId, queryClient]);
+      try {
+        const newNote = await createNote(projectId, {
+          title: getTodayTitle(),
+          folder_id: dailyFolderIdRef.current,
+        });
+        const content = editor.getJSON();
+        await updateNote(projectId, newNote.id, { content });
+
+        // Pre-populate the cache so useNoteEditor receives the note with content
+        // already set — preventing the id-change effect from clearing the editor
+        queryClient.setQueryData(
+          ["notes", projectId, { folder_id: dailyFolderIdRef.current }],
+          (old: Note[] | undefined) => [...(old ?? []), { ...newNote, content }],
+        );
+
+        setTodayNoteId(newNote.id);
+      } catch {
+        creatingNoteRef.current = false;
+      }
+    };
+
+    editor.on("update", handleFirstInput);
+    return () => { editor.off("update", handleFirstInput); };
+  }, [editor, projectId, queryClient]);
 
   const isBooting =
     foldersQuery.isLoading ||
-    (dailyFolderId !== null && notesQuery.isLoading) ||
-    (notesQuery.isSuccess && todayNoteId === null);
+    (dailyFolderId !== null && notesQuery.isLoading);
 
   return (
     <div className="flex flex-col h-full overflow-hidden text-sm">
@@ -93,10 +115,12 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
-      ) : todayNote ? (
+      ) : (
         <>
           <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0 gap-2">
-            <span className="text-sm font-semibold truncate">{todayNote.title}</span>
+            <span className="text-sm font-semibold truncate">
+              {todayNote?.title ?? getTodayTitle()}
+            </span>
             <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
               {saveState === "saving" && (
                 <>
@@ -121,11 +145,6 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
             <NoteEditor editor={editor} />
           </div>
         </>
-      ) : (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center p-4">
-          <NotebookPen className="h-8 w-8 text-muted-foreground/30" />
-          <p className="text-xs text-muted-foreground">Initializing daily notes…</p>
-        </div>
       )}
     </div>
   );
