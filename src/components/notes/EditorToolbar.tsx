@@ -14,7 +14,10 @@ import {
   Minus,
   Quote,
   Strikethrough,
+  Type,
+  Underline as UnderlineIcon,
 } from "lucide-react";
+import type { FontSizeValue } from "@/lib/extensions/FontSize";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -30,16 +33,33 @@ interface EditorToolbarProps {
 }
 
 const CODE_LANGUAGES = [
-  { value: "plaintext", label: "Plain text" },
+  { value: "plaintext",  label: "Plain text" },
   { value: "javascript", label: "JavaScript" },
+  { value: "jsx",        label: "JSX" },
   { value: "typescript", label: "TypeScript" },
-  { value: "php", label: "PHP" },
-  { value: "python", label: "Python" },
-  { value: "json", label: "JSON" },
-  { value: "html", label: "HTML" },
-  { value: "css", label: "CSS" },
-  { value: "sql", label: "SQL" },
-  { value: "bash", label: "Bash" },
+  { value: "tsx",        label: "TSX" },
+  { value: "php",        label: "PHP" },
+  { value: "python",     label: "Python" },
+  { value: "json",       label: "JSON" },
+  { value: "html",       label: "HTML" },
+  { value: "css",        label: "CSS" },
+  { value: "sql",        label: "SQL" },
+  { value: "bash",       label: "Bash" },
+  { value: "rust",       label: "Rust" },
+  { value: "go",         label: "Go" },
+  { value: "ruby",       label: "Ruby" },
+  { value: "swift",      label: "Swift" },
+  { value: "c",          label: "C" },
+  { value: "cpp",        label: "C++" },
+  { value: "yaml",       label: "YAML" },
+  { value: "markdown",   label: "Markdown" },
+];
+
+const FONT_SIZES: { label: string; value: FontSizeValue }[] = [
+  { label: "Small",  value: "0.8em" },
+  { label: "Normal", value: null },
+  { label: "Large",  value: "1.2em" },
+  { label: "XL",     value: "1.5em" },
 ];
 
 function ToolbarButton({
@@ -145,6 +165,14 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <Strikethrough className="h-3.5 w-3.5" />
       </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor?.chain().focus().toggleUnderline().run()}
+        active={editor?.isActive("underline")}
+        disabled={!editor}
+        title="Underline (Ctrl+U)"
+      >
+        <UnderlineIcon className="h-3.5 w-3.5" />
+      </ToolbarButton>
 
       <Separator orientation="vertical" className="h-5 mx-1" />
 
@@ -173,6 +201,44 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         <Heading3 className="h-3.5 w-3.5" />
       </ToolbarButton>
+
+      <Separator orientation="vertical" className="h-5 mx-1" />
+
+      {/* Font size */}
+      {(() => {
+        const isHeading = editor?.isActive("heading") ?? false;
+        const currentSize = (editor?.getAttributes("fontSize").size ?? null) as FontSizeValue;
+        const currentLabel = FONT_SIZES.find((o) => o.value === currentSize)?.label ?? "Normal";
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={!editor || isHeading}
+                className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                title={isHeading ? "Font size unavailable in headings" : "Font size"}
+              >
+                <Type className="h-3 w-3" />
+                {currentLabel}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {FONT_SIZES.map((opt) => (
+                <DropdownMenuItem
+                  key={opt.label}
+                  className={cn("text-xs", currentSize === opt.value && "text-primary")}
+                  onClick={() => editor?.chain().focus().setFontSize(opt.value).run()}
+                >
+                  {opt.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      })()}
 
       <Separator orientation="vertical" className="h-5 mx-1" />
 

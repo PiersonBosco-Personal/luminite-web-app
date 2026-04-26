@@ -229,6 +229,11 @@ body {
   margin: 1.25rem 0;
 }
 
+.note-editor .ProseMirror u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .note-editor .ProseMirror code {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 0.85em;
@@ -257,19 +262,31 @@ body {
 
 /* Syntax highlight token colors */
 .note-editor .ProseMirror pre .hljs-keyword,
-.note-editor .ProseMirror pre .hljs-selector-tag { color: #ff7b72; }
+.note-editor .ProseMirror pre .hljs-selector-tag  { color: #ff7b72; }
 .note-editor .ProseMirror pre .hljs-string,
-.note-editor .ProseMirror pre .hljs-attr { color: #a5d6ff; }
+.note-editor .ProseMirror pre .hljs-attr          { color: #a5d6ff; }
 .note-editor .ProseMirror pre .hljs-number,
-.note-editor .ProseMirror pre .hljs-literal { color: #79c0ff; }
-.note-editor .ProseMirror pre .hljs-comment { color: #8b949e; font-style: italic; }
+.note-editor .ProseMirror pre .hljs-literal       { color: #79c0ff; }
+.note-editor .ProseMirror pre .hljs-comment       { color: #8b949e; font-style: italic; }
 .note-editor .ProseMirror pre .hljs-function,
-.note-editor .ProseMirror pre .hljs-title { color: #d2a8ff; }
+.note-editor .ProseMirror pre .hljs-title         { color: #d2a8ff; }
+.note-editor .ProseMirror pre .hljs-title.class_,
+.note-editor .ProseMirror pre .hljs-class-name    { color: #f0883e; }
 .note-editor .ProseMirror pre .hljs-variable,
-.note-editor .ProseMirror pre .hljs-name { color: #ffa657; }
-.note-editor .ProseMirror pre .hljs-built_in { color: #2ebbcc; }
-.note-editor .ProseMirror pre .hljs-type { color: #7ee787; }
-.note-editor .ProseMirror pre .hljs-punctuation { color: #c9d1d9; }
+.note-editor .ProseMirror pre .hljs-name          { color: #ffa657; }
+.note-editor .ProseMirror pre .hljs-built_in      { color: #2ebbcc; }
+.note-editor .ProseMirror pre .hljs-type          { color: #7ee787; }
+.note-editor .ProseMirror pre .hljs-punctuation   { color: #c9d1d9; }
+.note-editor .ProseMirror pre .hljs-tag           { color: #2ebbcc; }
+.note-editor .ProseMirror pre .hljs-tag .hljs-name { color: #7ee787; }
+.note-editor .ProseMirror pre .hljs-tag .hljs-attr { color: #a5d6ff; }
+.note-editor .ProseMirror pre .hljs-property      { color: #79c0ff; }
+.note-editor .ProseMirror pre .hljs-params        { color: #c9d1d9; }
+.note-editor .ProseMirror pre .hljs-operator      { color: #ff7b72; }
+.note-editor .ProseMirror pre .hljs-meta          { color: #e3b341; }
+.note-editor .ProseMirror pre .hljs-meta .hljs-string { color: #a5d6ff; }
+.note-editor .ProseMirror pre .hljs-deletion      { color: #ffa198; background: rgba(255,100,100,0.1); }
+.note-editor .ProseMirror pre .hljs-addition      { color: #56d364; background: rgba(86,211,100,0.1); }
 
 /* Task list */
 .note-editor .ProseMirror ul[data-type="taskList"] {

@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { useEditor } from "@tiptap/react";
+import { useEditor, ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
+import { findChildren } from "@tiptap/core";
 import { createLowlight, common } from "lowlight";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedCallback } from "use-debounce";
 import { updateNote } from "@/api/notes";
 import type { Note } from "@/types/models";
+import { FontSize } from "@/lib/extensions/FontSize";
+import { CodeBlockView } from "@/components/notes/CodeBlockView";
 
 const lowlight = createLowlight(common);
 
@@ -54,21 +58,59 @@ export function useNoteEditor(note: Note | null, projectId: number) {
     mutation.mutate(content);
   }, 1500);
 
+  const debouncedJsxCheck = useDebouncedCallback(
+    (editorInstance: NonNullable<ReturnType<typeof useEditor>>) => {
+      const { doc } = editorInstance.state;
+      const jsxPattern = /<[A-Z][A-Za-z0-9.]*[\s/>]|<\/[A-Za-z]|=\{/;
+      const tr = editorInstance.state.tr;
+      let changed = false;
+      findChildren(doc, (node) => node.type.name === "codeBlock").forEach(
+        ({ node, pos }) => {
+          const lang: string = node.attrs.language ?? "";
+          if (
+            (lang === "typescript" || lang === "javascript") &&
+            jsxPattern.test(node.textContent)
+          ) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              language: lang === "typescript" ? "tsx" : "jsx",
+            });
+            changed = true;
+          }
+        }
+      );
+      if (changed) {
+        tr.setMeta("addToHistory", false);
+        tr.setMeta("jsxAutoSwitch", true);
+        editorInstance.view.dispatch(tr);
+      }
+    },
+    400
+  );
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ codeBlock: false }),
       TaskList,
       TaskItem.configure({ nested: true }),
-      CodeBlockLowlight.configure({ lowlight }),
+      CodeBlockLowlight.configure({ lowlight }).extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(CodeBlockView);
+        },
+      }),
       Placeholder.configure({ placeholder: "Start writing..." }),
       Link.configure({ openOnClick: false }),
+      Underline,
+      FontSize,
     ],
     content: parseContent(note?.content),
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor, transaction }) => {
       if (!note) return;
+      if (transaction.getMeta("jsxAutoSwitch")) return;
       setSaveState("saving");
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       debouncedSave(editor.getJSON());
+      debouncedJsxCheck(editor);
     },
   });
 
