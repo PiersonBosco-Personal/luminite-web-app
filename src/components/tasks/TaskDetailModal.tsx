@@ -93,9 +93,15 @@ export function TaskDetailModal({
   const [titleValue, setTitleValue] = useState("");
   const [descValue, setDescValue] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
-  const [expandedSubtasks, setExpandedSubtasks] = useState<Set<number>>(new Set());
-  const [subtaskDescValues, setSubtaskDescValues] = useState<Record<number, string>>({});
-  const [subtaskAssigneeOverrides, setSubtaskAssigneeOverrides] = useState<Record<number, number | null>>({});
+  const [expandedSubtasks, setExpandedSubtasks] = useState<Set<number>>(
+    new Set(),
+  );
+  const [subtaskDescValues, setSubtaskDescValues] = useState<
+    Record<number, string>
+  >({});
+  const [subtaskAssigneeOverrides, setSubtaskAssigneeOverrides] = useState<
+    Record<number, number | null>
+  >({});
   const titleRef = useRef<HTMLInputElement>(null);
   const subtaskRef = useRef<HTMLInputElement>(null);
 
@@ -194,22 +200,33 @@ export function TaskDetailModal({
   });
 
   const updateSubtaskMutation = useMutation({
-    mutationFn: ({ subtaskId, data }: { subtaskId: number; data: Parameters<typeof updateTask>[2] }) =>
-      updateTask(projectId, subtaskId, data),
+    mutationFn: ({
+      subtaskId,
+      data,
+    }: {
+      subtaskId: number;
+      data: Parameters<typeof updateTask>[2];
+    }) => updateTask(projectId, subtaskId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", taskId] });
       onTaskUpdated();
     },
   });
 
-  function toggleSubtaskExpanded(subtaskId: number, currentDesc: string | null) {
+  function toggleSubtaskExpanded(
+    subtaskId: number,
+    currentDesc: string | null,
+  ) {
     setExpandedSubtasks((prev) => {
       const next = new Set(prev);
       if (next.has(subtaskId)) {
         next.delete(subtaskId);
       } else {
         next.add(subtaskId);
-        setSubtaskDescValues((d) => ({ ...d, [subtaskId]: d[subtaskId] ?? (currentDesc ?? "") }));
+        setSubtaskDescValues((d) => ({
+          ...d,
+          [subtaskId]: d[subtaskId] ?? currentDesc ?? "",
+        }));
       }
       return next;
     });
@@ -218,7 +235,10 @@ export function TaskDetailModal({
   function commitSubtaskDesc(subtaskId: number, originalDesc: string | null) {
     const val = subtaskDescValues[subtaskId] ?? "";
     if (val !== (originalDesc ?? "")) {
-      updateSubtaskMutation.mutate({ subtaskId, data: { description: val || null } });
+      updateSubtaskMutation.mutate({
+        subtaskId,
+        data: { description: val || null },
+      });
     }
   }
 
@@ -332,10 +352,7 @@ export function TaskDetailModal({
                           <ChevronDown className="w-3 h-3 text-muted-foreground ml-0.5" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="start"
-                        className="min-w-[140px]"
-                      >
+                      <DropdownMenuContent align="start" className="min-w-35">
                         {STATUS_OPTIONS.map((s) => (
                           <DropdownMenuItem
                             key={s.value}
@@ -388,10 +405,7 @@ export function TaskDetailModal({
                           <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="start"
-                        className="min-w-[130px]"
-                      >
+                      <DropdownMenuContent align="start" className="min-w-32.5">
                         {PRIORITY_OPTIONS.map((p) => (
                           <DropdownMenuItem
                             key={p.value}
@@ -445,7 +459,7 @@ export function TaskDetailModal({
                       <ChevronDown className="w-3 h-3 text-muted-foreground ml-0.5" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[160px]">
+                  <DropdownMenuContent align="start" className="min-w-40">
                     <DropdownMenuItem
                       onSelect={() =>
                         updateMutation.mutate({ assigned_to: null })
@@ -566,7 +580,10 @@ export function TaskDetailModal({
                   {subtasks.map((subtask) => {
                     const isExpanded = expandedSubtasks.has(subtask.id);
                     return (
-                      <div key={subtask.id} className="rounded-md border border-transparent hover:border-border/40 transition-colors">
+                      <div
+                        key={subtask.id}
+                        className="rounded-md border border-transparent hover:border-border/40 transition-colors"
+                      >
                         <div className="flex items-center gap-2 group px-1 py-0.5">
                           <button
                             onClick={() => toggleSubtask(subtask)}
@@ -586,11 +603,15 @@ export function TaskDetailModal({
                           >
                             {subtask.title}
                           </span>
-                              {(() => {
-                            const aid = subtask.id in subtaskAssigneeOverrides
-                              ? subtaskAssigneeOverrides[subtask.id]
-                              : (subtask.assignee?.id ?? null);
-                            const m = aid != null ? members.find((x) => x.id === aid) : null;
+                          {(() => {
+                            const aid =
+                              subtask.id in subtaskAssigneeOverrides
+                                ? subtaskAssigneeOverrides[subtask.id]
+                                : (subtask.assignee?.id ?? null);
+                            const m =
+                              aid != null
+                                ? members.find((x) => x.id === aid)
+                                : null;
                             return m ? (
                               <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-[10px] font-semibold text-primary shrink-0">
                                 {m.name.charAt(0).toUpperCase()}
@@ -598,7 +619,12 @@ export function TaskDetailModal({
                             ) : null;
                           })()}
                           <button
-                            onClick={() => toggleSubtaskExpanded(subtask.id, subtask.description)}
+                            onClick={() =>
+                              toggleSubtaskExpanded(
+                                subtask.id,
+                                subtask.description,
+                              )
+                            }
                             className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
                             title="Edit details"
                           >
@@ -609,7 +635,9 @@ export function TaskDetailModal({
                             )}
                           </button>
                           <button
-                            onClick={() => deleteSubtaskMutation.mutate(subtask.id)}
+                            onClick={() =>
+                              deleteSubtaskMutation.mutate(subtask.id)
+                            }
                             className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-opacity"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -619,59 +647,97 @@ export function TaskDetailModal({
                         {isExpanded && (
                           <div className="px-7 pb-2 pt-1 space-y-2">
                             <textarea
-                              value={subtaskDescValues[subtask.id] ?? (subtask.description ?? "")}
-                              onChange={(e) =>
-                                setSubtaskDescValues((d) => ({ ...d, [subtask.id]: e.target.value }))
+                              value={
+                                subtaskDescValues[subtask.id] ??
+                                subtask.description ??
+                                ""
                               }
-                              onBlur={() => commitSubtaskDesc(subtask.id, subtask.description)}
+                              onChange={(e) =>
+                                setSubtaskDescValues((d) => ({
+                                  ...d,
+                                  [subtask.id]: e.target.value,
+                                }))
+                              }
+                              onBlur={() =>
+                                commitSubtaskDesc(
+                                  subtask.id,
+                                  subtask.description,
+                                )
+                              }
                               placeholder="Add a description..."
                               rows={2}
                               className="w-full text-xs bg-muted/40 border border-border/50 rounded px-2 py-1.5 text-foreground placeholder:text-muted-foreground/50 resize-none outline-none focus:border-primary/50 transition-colors"
                             />
                             {(() => {
-                              const assigneeId = subtask.id in subtaskAssigneeOverrides
-                                ? subtaskAssigneeOverrides[subtask.id]
-                                : (subtask.assignee?.id ?? null);
-                              const resolvedAssignee = assigneeId != null
-                                ? members.find((m) => m.id === assigneeId) ?? null
-                                : null;
+                              const assigneeId =
+                                subtask.id in subtaskAssigneeOverrides
+                                  ? subtaskAssigneeOverrides[subtask.id]
+                                  : (subtask.assignee?.id ?? null);
+                              const resolvedAssignee =
+                                assigneeId != null
+                                  ? (members.find((m) => m.id === assigneeId) ??
+                                    null)
+                                  : null;
                               return (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <button className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/50 border border-border/60 hover:bg-muted hover:border-border transition-colors text-xs font-medium text-foreground">
                                       {resolvedAssignee ? (
                                         <span className="w-4 h-4 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-[9px] font-semibold text-primary shrink-0">
-                                          {resolvedAssignee.name.charAt(0).toUpperCase()}
+                                          {resolvedAssignee.name
+                                            .charAt(0)
+                                            .toUpperCase()}
                                         </span>
                                       ) : (
                                         <span className="w-4 h-4 rounded-full bg-muted border border-border/60 flex items-center justify-center text-[9px] text-muted-foreground shrink-0">
                                           —
                                         </span>
                                       )}
-                                      <span>{resolvedAssignee?.name ?? "Unassigned"}</span>
+                                      <span>
+                                        {resolvedAssignee?.name ?? "Unassigned"}
+                                      </span>
                                       <ChevronDown className="w-3 h-3 text-muted-foreground ml-0.5" />
                                     </button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="start" className="min-w-[160px]">
+                                  <DropdownMenuContent
+                                    align="start"
+                                    className="min-w-40"
+                                  >
                                     <DropdownMenuItem
                                       onSelect={() => {
-                                        setSubtaskAssigneeOverrides((o) => ({ ...o, [subtask.id]: null }));
-                                        updateSubtaskMutation.mutate({ subtaskId: subtask.id, data: { assigned_to: null } });
+                                        setSubtaskAssigneeOverrides((o) => ({
+                                          ...o,
+                                          [subtask.id]: null,
+                                        }));
+                                        updateSubtaskMutation.mutate({
+                                          subtaskId: subtask.id,
+                                          data: { assigned_to: null },
+                                        });
                                       }}
                                       className="flex items-center gap-2 cursor-pointer"
                                     >
                                       <span className="w-5 h-5 rounded-full bg-muted border border-border/60 flex items-center justify-center text-[10px] text-muted-foreground shrink-0">
                                         —
                                       </span>
-                                      <span className="text-muted-foreground">Unassigned</span>
-                                      {!resolvedAssignee && <Check className="w-3 h-3 ml-auto" />}
+                                      <span className="text-muted-foreground">
+                                        Unassigned
+                                      </span>
+                                      {!resolvedAssignee && (
+                                        <Check className="w-3 h-3 ml-auto" />
+                                      )}
                                     </DropdownMenuItem>
                                     {members.map((m) => (
                                       <DropdownMenuItem
                                         key={m.id}
                                         onSelect={() => {
-                                          setSubtaskAssigneeOverrides((o) => ({ ...o, [subtask.id]: m.id }));
-                                          updateSubtaskMutation.mutate({ subtaskId: subtask.id, data: { assigned_to: m.id } });
+                                          setSubtaskAssigneeOverrides((o) => ({
+                                            ...o,
+                                            [subtask.id]: m.id,
+                                          }));
+                                          updateSubtaskMutation.mutate({
+                                            subtaskId: subtask.id,
+                                            data: { assigned_to: m.id },
+                                          });
                                         }}
                                         className="flex items-center gap-2 cursor-pointer"
                                       >

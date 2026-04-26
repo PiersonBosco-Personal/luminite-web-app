@@ -8,11 +8,9 @@ import {
   Globe,
   Target,
   Cpu,
-  Users,
   Save,
   Loader2,
   CheckCircle2,
-  Clock,
   Plus,
   X,
   CornerDownRight,
@@ -27,7 +25,7 @@ import {
 import type { TechStack } from "@/types/models";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import { Separator } from "@/components/ui/separator";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 
@@ -45,7 +43,7 @@ function SectionHeader({
       <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary/10 shrink-0">
         <Icon className="h-3.5 w-3.5 text-primary" />
       </div>
-      <span className="text-[11px] font-semibold tracking-[0.1em] uppercase text-muted-foreground">
+      <span className="text-[11px] font-semibold tracking-widest uppercase text-muted-foreground">
         {label}
       </span>
       <div className="flex-1 h-px bg-border" />
@@ -123,22 +121,6 @@ function SaveableTextarea({
           </Button>
         )}
       </div>
-    </div>
-  );
-}
-
-// ── ComingSoonOverlay ─────────────────────────────────────────────────────────
-
-function ComingSoonOverlay({ label }: { label: string }) {
-  return (
-    <div className="relative rounded-lg border border-dashed border-border bg-muted/20 px-5 py-8 flex flex-col items-center justify-center gap-2 text-center">
-      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/40 mb-1">
-        <Clock className="h-4 w-4 text-muted-foreground/60" />
-      </div>
-      <p className="text-sm font-medium text-muted-foreground/70">{label}</p>
-      <p className="text-xs text-muted-foreground/40 max-w-xs">
-        Requires backend support — will be wired up in a future update.
-      </p>
     </div>
   );
 }
@@ -228,7 +210,19 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
   // Seed local state once from server data
   useEffect(() => {
     if (serverData && !initialized.current) {
-      setEntries(serverData.length > 0 ? toLocalEntries(serverData) : [{ localId: uid(), serverId: null, name: "", version: "", subs: [] }]);
+      setEntries(
+        serverData.length > 0
+          ? toLocalEntries(serverData)
+          : [
+              {
+                localId: uid(),
+                serverId: null,
+                name: "",
+                version: "",
+                subs: [],
+              },
+            ],
+      );
       initialized.current = true;
     }
   }, [serverData]);
@@ -240,14 +234,17 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
 
   const createEntry = useMutation({
     mutationFn: (data: { name: string; version: string }) =>
-      createTechStack(projectId, { name: data.name, version: data.version || null }),
+      createTechStack(projectId, {
+        name: data.name,
+        version: data.version || null,
+      }),
     onSuccess: (created, _, localId) => {
       setEntries((prev) =>
         prev.map((e) =>
           e.localId === (localId as unknown as string)
             ? { ...e, serverId: created.id, localId: String(created.id) }
-            : e
-        )
+            : e,
+        ),
       );
       invalidate();
     },
@@ -271,36 +268,40 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
 
   // ── Sub mutations ──────────────────────────────────────────────────────────
 
-  const createSub = useMutation({
-    mutationFn: (data: {
-      name: string;
-      version: string;
-      parentServerId: number;
-    }) =>
-      createTechStack(projectId, {
-        name: data.name,
-        version: data.version || null,
-        parent_id: data.parentServerId,
-      }),
-    onSuccess: (created, vars) => {
-      setEntries((prev) =>
-        prev.map((e) =>
-          e.serverId === vars.parentServerId
-            ? {
-                ...e,
-                subs: e.subs.map((s) =>
-                  s.serverId === null && s.name === vars.name
-                    ? { ...s, serverId: created.id, localId: String(created.id) }
-                    : s
-                ),
-              }
-            : e
-        )
-      );
-      invalidate();
-    },
-    onError: () => showSnackbar("Failed to save sub-technology.", "error"),
-  });
+  // const createSub = useMutation({
+  //   mutationFn: (data: {
+  //     name: string;
+  //     version: string;
+  //     parentServerId: number;
+  //   }) =>
+  //     createTechStack(projectId, {
+  //       name: data.name,
+  //       version: data.version || null,
+  //       parent_id: data.parentServerId,
+  //     }),
+  //   onSuccess: (created, vars) => {
+  //     setEntries((prev) =>
+  //       prev.map((e) =>
+  //         e.serverId === vars.parentServerId
+  //           ? {
+  //               ...e,
+  //               subs: e.subs.map((s) =>
+  //                 s.serverId === null && s.name === vars.name
+  //                   ? {
+  //                       ...s,
+  //                       serverId: created.id,
+  //                       localId: String(created.id),
+  //                     }
+  //                   : s,
+  //               ),
+  //             }
+  //           : e,
+  //       ),
+  //     );
+  //     invalidate();
+  //   },
+  //   onError: () => showSnackbar("Failed to save sub-technology.", "error"),
+  // });
 
   const patchSub = useMutation({
     mutationFn: (data: { serverId: number; name: string; version: string }) =>
@@ -322,10 +323,10 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
   const handleEntryBlur = (entry: LocalEntry) => {
     if (!entry.name.trim()) return;
     if (entry.serverId === null) {
-      createEntry.mutate(
-        { name: entry.name, version: entry.version },
-        { onSuccess: undefined, context: entry.localId } as never
-      );
+      createEntry.mutate({ name: entry.name, version: entry.version }, {
+        onSuccess: undefined,
+        context: entry.localId,
+      } as never);
       // Pass localId as context via a workaround
       createTechStack(projectId, {
         name: entry.name,
@@ -335,8 +336,8 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
           prev.map((e) =>
             e.localId === entry.localId
               ? { ...e, serverId: created.id, localId: String(created.id) }
-              : e
-          )
+              : e,
+          ),
         );
         invalidate();
       });
@@ -364,12 +365,16 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
                   ...e,
                   subs: e.subs.map((s) =>
                     s.localId === sub.localId
-                      ? { ...s, serverId: created.id, localId: String(created.id) }
-                      : s
+                      ? {
+                          ...s,
+                          serverId: created.id,
+                          localId: String(created.id),
+                        }
+                      : s,
                   ),
                 }
-              : e
-          )
+              : e,
+          ),
         );
         invalidate();
       });
@@ -392,8 +397,8 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
       prev.map((e) =>
         e.localId === entry.localId
           ? { ...e, subs: e.subs.filter((s) => s.localId !== sub.localId) }
-          : e
-      )
+          : e,
+      ),
     );
     if (sub.serverId !== null) removeSub.mutate(sub.serverId);
   };
@@ -409,8 +414,8 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
                 { localId: uid(), serverId: null, name: "", version: "" },
               ],
             }
-          : e
-      )
+          : e,
+      ),
     );
   };
 
@@ -445,8 +450,8 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
                   prev.map((en) =>
                     en.localId === entry.localId
                       ? { ...en, name: e.target.value }
-                      : en
-                  )
+                      : en,
+                  ),
                 )
               }
               onBlur={() => handleEntryBlur(entry)}
@@ -460,8 +465,8 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
                   prev.map((en) =>
                     en.localId === entry.localId
                       ? { ...en, version: e.target.value }
-                      : en
-                  )
+                      : en,
+                  ),
                 )
               }
               onBlur={() => handleEntryBlur(entry)}
@@ -487,7 +492,10 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
           {entry.subs.length > 0 && (
             <div className="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
               {entry.subs.map((sub) => (
-                <div key={sub.localId} className="flex items-center gap-2 group/sub">
+                <div
+                  key={sub.localId}
+                  className="flex items-center gap-2 group/sub"
+                >
                   <Input
                     value={sub.name}
                     onChange={(e) =>
@@ -499,11 +507,11 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
                                 subs: en.subs.map((s) =>
                                   s.localId === sub.localId
                                     ? { ...s, name: e.target.value }
-                                    : s
+                                    : s,
                                 ),
                               }
-                            : en
-                        )
+                            : en,
+                        ),
                       )
                     }
                     onBlur={() => handleSubBlur(entry, sub)}
@@ -521,11 +529,11 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
                                 subs: en.subs.map((s) =>
                                   s.localId === sub.localId
                                     ? { ...s, version: e.target.value }
-                                    : s
+                                    : s,
                                 ),
                               }
-                            : en
-                        )
+                            : en,
+                        ),
                       )
                     }
                     onBlur={() => handleSubBlur(entry, sub)}
@@ -559,19 +567,10 @@ function TechStackSection({ projectId }: TechStackSectionProps) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
 function useProjectField(
   field: string,
   initialValue: string,
-  projectId: number
+  projectId: number,
 ) {
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
@@ -610,17 +609,17 @@ export default function DetailsPage() {
   const description = useProjectField(
     "description",
     project?.description ?? "",
-    id
+    id,
   );
   const goals = useProjectField("goals", project?.goals ?? "", id);
   const architectureNotes = useProjectField(
     "architecture_notes",
     project?.architecture_notes ?? "",
-    id
+    id,
   );
 
-  const members = project?.members ?? [];
-  const owner = project?.owner;
+  // const members = project?.members ?? [];
+  // const owner = project?.owner;
 
   return (
     <div className="flex flex-col h-full w-full overflow-y-auto px-6 py-4">
@@ -631,7 +630,7 @@ export default function DetailsPage() {
             {isLoading ? (
               <span className="inline-block w-40 h-5 rounded bg-muted/40 animate-pulse" />
             ) : (
-              project?.name ?? "Project Details"
+              (project?.name ?? "Project Details")
             )}
           </h1>
           <p className="text-xs text-muted-foreground">
@@ -740,87 +739,7 @@ export default function DetailsPage() {
         </section>
 
         <Separator />
-
-        {/* Team */}
-        <section className="pb-8">
-          <SectionHeader icon={Users} label="Team" />
-          {isLoading ? (
-            <div className="flex flex-col gap-2">
-              {[1, 2].map((i) => (
-                <div key={i} className="flex items-center gap-3 py-1">
-                  <div className="w-7 h-7 rounded-full bg-muted/40 animate-pulse" />
-                  <div className="flex flex-col gap-1">
-                    <div className="w-28 h-3 rounded bg-muted/40 animate-pulse" />
-                    <div className="w-16 h-2.5 rounded bg-muted/30 animate-pulse" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {owner && (
-                <TeamMember
-                  name={owner.name}
-                  email={owner.email}
-                  role="Owner"
-                />
-              )}
-              {members
-                .filter((m) => m.id !== owner?.id)
-                .map((member) => (
-                  <TeamMember
-                    key={member.id}
-                    name={member.name}
-                    email={member.email}
-                    role={
-                      member.pivot?.role === "owner" ? "Owner" : "Member"
-                    }
-                  />
-                ))}
-              {!owner && members.length === 0 && (
-                <p className="text-xs text-muted-foreground/50">
-                  No team members found.
-                </p>
-              )}
-            </div>
-          )}
-        </section>
       </div>
-    </div>
-  );
-}
-
-function TeamMember({
-  name,
-  email,
-  role,
-}: {
-  name: string;
-  email: string;
-  role: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/20 transition-colors">
-      <Avatar className="h-7 w-7 shrink-0">
-        <AvatarFallback className="text-[11px] font-semibold bg-primary/10 text-primary">
-          {getInitials(name)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex flex-col min-w-0 flex-1">
-        <span className="text-sm font-medium leading-tight truncate">
-          {name}
-        </span>
-        <span className="text-xs text-muted-foreground truncate">{email}</span>
-      </div>
-      <span
-        className={`shrink-0 text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full ${
-          role === "Owner"
-            ? "bg-primary/10 text-primary"
-            : "bg-muted/40 text-muted-foreground"
-        }`}
-      >
-        {role}
-      </span>
     </div>
   );
 }
