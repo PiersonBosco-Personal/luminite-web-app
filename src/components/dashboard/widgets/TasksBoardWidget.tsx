@@ -13,9 +13,9 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus, Loader2 } from "lucide-react";
-import { TaskColumn } from "@/components/tasks/TaskColumn";
-import { TaskCard } from "@/components/tasks/TaskCard";
-import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
+import { TaskColumn } from "@/components/dashboard/widgets/tasks/TaskColumn";
+import { TaskCard } from "@/components/dashboard/widgets/tasks/TaskCard";
+import { TaskDetailModal } from "@/components/dashboard/widgets/tasks/TaskDetailModal";
 import {
   getSections,
   createSection,
