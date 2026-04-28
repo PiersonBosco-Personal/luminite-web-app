@@ -34,7 +34,7 @@ export function useProjectChannel(projectId: number): void {
       .listen('.note_folder.updated', () => queryClient.invalidateQueries({ queryKey: ['note-folders', projectId] }))
       .listen('.note_folder.deleted', () => {
         queryClient.invalidateQueries({ queryKey: ['note-folders', projectId] });
-        queryClient.invalidateQueries({ queryKey: ['notes', projectId] }); // notes may move to root on folder delete
+        queryClient.invalidateQueries({ queryKey: ['notes', projectId] });
       })
 
       // Label events

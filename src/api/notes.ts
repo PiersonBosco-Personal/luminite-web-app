@@ -84,7 +84,7 @@ export async function getFolders(projectId: number): Promise<NoteFolder[]> {
 
 export async function createFolder(
   projectId: number,
-  data: { name: string; position?: number }
+  data: { name: string; position?: number; parent_id?: number | null }
 ): Promise<NoteFolder> {
   const res = await customAxios.post(
     `/v1/projects/${projectId}/note-folders`,
@@ -96,7 +96,7 @@ export async function createFolder(
 export async function updateFolder(
   projectId: number,
   folderId: number,
-  data: { name?: string; position?: number }
+  data: { name?: string; position?: number; parent_id?: number | null }
 ): Promise<NoteFolder> {
   const res = await customAxios.put(
     `/v1/projects/${projectId}/note-folders/${folderId}`,

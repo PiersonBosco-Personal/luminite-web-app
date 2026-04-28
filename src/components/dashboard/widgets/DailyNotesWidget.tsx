@@ -5,6 +5,11 @@ import { createFolder, createNote, getFolders, getNotes, updateNote } from "@/ap
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { EditorToolbar } from "@/components/notes/EditorToolbar";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
+import { useNotePresence } from "@/hooks/useNotePresence";
+import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { getEcho } from "@/lib/echo";
+import { cn } from "@/lib/utils";
 import type { Note } from "@/types/models";
 import type { WidgetProps } from "../widgetRegistry";
 
@@ -20,6 +25,8 @@ function getTodayTitle(): string {
 
 export function DailyNotesWidget({ projectId }: WidgetProps) {
   const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
 
   const [dailyFolderId, setDailyFolderId] = useState<number | null>(null);
   const [todayNoteId, setTodayNoteId] = useState<number | null>(null);
@@ -46,7 +53,17 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
       ? (notesQuery.data?.find((n) => n.id === todayNoteId) ?? null)
       : null;
 
-  const { editor, saveState } = useNoteEditor(todayNote, projectId);
+  const { editor, saveState, reportExternalSave } = useNoteEditor(
+    todayNote,
+    projectId,
+    (name) => showSnackbar(`Your changes were saved and overrode ${name}'s recent edits.`, "success"),
+    (name) => showSnackbar(`Your recent changes were overridden by ${name}.`, "error"),
+  );
+
+  const reportExternalSaveRef = useRef(reportExternalSave);
+  reportExternalSaveRef.current = reportExternalSave;
+
+  const notePresence = useNotePresence(todayNoteId, currentUser?.id);
 
   // Step 1: find or create the "Daily Notes" folder
   useEffect(() => {
@@ -88,8 +105,6 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
         const content = editor.getJSON();
         await updateNote(projectId, newNote.id, { content });
 
-        // Pre-populate the cache so useNoteEditor receives the note with content
-        // already set — preventing the id-change effect from clearing the editor
         queryClient.setQueryData(
           ["notes", projectId, { folder_id: dailyFolderIdRef.current }],
           (old: Note[] | undefined) => [...(old ?? []), { ...newNote, content }],
@@ -104,6 +119,34 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
     editor.on("update", handleFirstInput);
     return () => { editor.off("update", handleFirstInput); };
   }, [editor, projectId, queryClient]);
+
+  // Overwrite detection — call reportExternalSave when another user updates
+  // the same note we're currently editing. useProjectChannel handles query
+  // invalidation; this only adds the overwrite notification on top.
+  useEffect(() => {
+    if (!projectId) return;
+    const echo = getEcho();
+    if (!echo) return;
+
+    const channel = echo.private(`project.${projectId}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pusher = (channel as any).subscription as {
+      bind: (event: string, fn: (e: unknown) => void) => void;
+      unbind: (event: string, fn: (e: unknown) => void) => void;
+    };
+    if (!pusher) return;
+
+    const handleNoteUpdated = (e: { note: Note }) => {
+      if (e.note?.id === todayNoteIdRef.current) {
+        reportExternalSaveRef.current(e.note.author?.name ?? "Someone");
+      }
+    };
+
+    pusher.bind("note.updated", handleNoteUpdated);
+    return () => {
+      pusher.unbind("note.updated", handleNoteUpdated);
+    };
+  }, [projectId]);
 
   const isBooting =
     foldersQuery.isLoading ||
@@ -121,19 +164,39 @@ export function DailyNotesWidget({ projectId }: WidgetProps) {
             <span className="text-sm font-semibold truncate">
               {todayNote?.title ?? getTodayTitle()}
             </span>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-              {saveState === "saving" && (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span>Saving…</span>
-                </>
+            <div className="flex items-center gap-2 shrink-0">
+              {notePresence.length > 0 && (
+                <div className="flex items-center">
+                  {notePresence.map((member, i) => (
+                    <div
+                      key={member.id}
+                      title={`${member.name} is also editing this note`}
+                      style={{ zIndex: notePresence.length - i }}
+                      className={cn(
+                        "h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold ring-2 ring-background select-none",
+                        i > 0 && "-ml-1",
+                        "bg-primary/20 text-primary",
+                      )}
+                    >
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                  ))}
+                </div>
               )}
-              {saveState === "saved" && (
-                <>
-                  <CheckCircle2 className="h-3 w-3 text-primary" />
-                  <span className="text-primary">Saved</span>
-                </>
-              )}
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                {saveState === "saving" && (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Saving…</span>
+                  </>
+                )}
+                {saveState === "saved" && (
+                  <>
+                    <CheckCircle2 className="h-3 w-3 text-primary" />
+                    <span className="text-primary">Saved</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 

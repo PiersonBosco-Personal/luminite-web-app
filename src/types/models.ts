@@ -53,6 +53,7 @@ export interface Task {
 export interface NoteFolder {
   id: number;
   project_id: number;
+  parent_id: number | null;
   created_by: number;
   name: string;
   position: number;

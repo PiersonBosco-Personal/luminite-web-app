@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TaskList from "@tiptap/extension-task-list";
@@ -32,15 +32,48 @@ function parseContent(content: unknown) {
   return content;
 }
 
-export function useNoteEditor(note: Note | null, projectId: number) {
+export function useNoteEditor(
+  note: Note | null,
+  projectId: number,
+  onOverwrite?: (name: string) => void,
+  onOverridden?: (name: string) => void,
+) {
   const queryClient = useQueryClient();
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Tracks the content hash last received from the server, so we can detect external changes
+  // Tracks the content hash last received from the server to avoid re-syncing unchanged content
   const serverContentHashRef = useRef<string | null>(null);
-  // Stable ref so the external-sync effect can read saveState without it being a dep
+  // Stable ref so effects can read saveState without stale closures
   const saveStateRef = useRef<SaveState>("idle");
   saveStateRef.current = saveState;
+
+  const onOverwriteRef = useRef(onOverwrite);
+  onOverwriteRef.current = onOverwrite;
+  const onOverriddenRef = useRef(onOverridden);
+  onOverriddenRef.current = onOverridden;
+
+  // True after the user has saved this note at least once — lets us detect when
+  // someone else overwrites our work on the server
+  const hasSavedRef = useRef(false);
+
+  // Name of the user whose save we're about to overwrite — set via reportExternalSave
+  const [overwrittenBy, setOverwrittenBy] = useState<string | null>(null);
+
+  // Called from NotesPage's Echo listener when another user saves this note.
+  // Only arms the notice when a save is actively pending so we know we'll overwrite them.
+  const reportExternalSave = useCallback((name: string) => {
+    if (saveStateRef.current !== "idle") {
+      setOverwrittenBy(name);
+    }
+  }, []);
+
+  // Show the snackbar once our save completes and we have a pending overwrite notice
+  useEffect(() => {
+    if (saveState === "saved" && overwrittenBy) {
+      onOverwriteRef.current?.(overwrittenBy);
+      setOverwrittenBy(null);
+    }
+  }, [saveState, overwrittenBy]);
 
   const mutation = useMutation({
     mutationFn: (content: unknown) => {
@@ -49,6 +82,7 @@ export function useNoteEditor(note: Note | null, projectId: number) {
     },
     onSuccess: () => {
       setSaveState("saved");
+      hasSavedRef.current = true;
       queryClient.invalidateQueries({ queryKey: ["notes", projectId] });
       savedTimerRef.current = setTimeout(() => setSaveState("idle"), 2000);
     },
@@ -120,8 +154,9 @@ export function useNoteEditor(note: Note | null, projectId: number) {
     const content = parseContent(note?.content) ?? { type: "doc", content: [] };
     editor.commands.setContent(content, { emitUpdate: false });
     setSaveState("idle");
+    setOverwrittenBy(null);
+    hasSavedRef.current = false;
     debouncedSave.cancel();
-    // Record the baseline server content hash for this note
     const raw = note?.content;
     serverContentHashRef.current = raw
       ? typeof raw === "string"
@@ -130,7 +165,7 @@ export function useNoteEditor(note: Note | null, projectId: number) {
       : null;
   }, [note?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync content from external server changes (another user edited this note)
+  // Sync editor content when another user's save arrives via React Query refetch
   useEffect(() => {
     if (!editor || !note) return;
     const raw = note.content;
@@ -139,11 +174,16 @@ export function useNoteEditor(note: Note | null, projectId: number) {
         ? raw
         : JSON.stringify(raw)
       : null;
-    // Skip if content hasn't actually changed from what we last saw from the server
     if (hash === serverContentHashRef.current) return;
     serverContentHashRef.current = hash;
-    // Don't overwrite while the user is actively saving — their edit takes precedence
+    // Don't overwrite the user's in-progress edits — their pending save takes precedence
     if (saveStateRef.current !== "idle") return;
+    // If this user previously saved this note and now someone else's version is
+    // replacing it, notify them that their changes were overridden
+    if (hasSavedRef.current) {
+      onOverriddenRef.current?.(note.author?.name ?? "Someone");
+      hasSavedRef.current = false;
+    }
     const parsed = parseContent(note.content) ?? { type: "doc", content: [] };
     editor.commands.setContent(parsed, { emitUpdate: false });
   }, [note?.content]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -154,5 +194,5 @@ export function useNoteEditor(note: Note | null, projectId: number) {
     };
   }, []);
 
-  return { editor, saveState };
+  return { editor, saveState, reportExternalSave };
 }

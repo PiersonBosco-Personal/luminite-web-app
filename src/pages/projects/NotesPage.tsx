@@ -39,9 +39,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getEcho } from "@/lib/echo";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import {
   createFolder,
@@ -58,6 +67,8 @@ import type { Note, NoteFolder } from "@/types/models";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { EditorToolbar } from "@/components/notes/EditorToolbar";
 import { useNoteEditor } from "@/hooks/useNoteEditor";
+import { useNotePresence } from "@/hooks/useNotePresence";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ── Note item ─────────────────────────────────────────────────────────────────
 
@@ -127,9 +138,9 @@ function SortableNoteItem({
   );
 }
 
-// ── Folder row ────────────────────────────────────────────────────────────────
+// ── Sub-folder row ────────────────────────────────────────────────────────────
 
-function FolderRow({
+function SubFolderRow({
   folder,
   notes,
   selectedId,
@@ -148,8 +159,8 @@ function FolderRow({
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(folder.name);
   const renameRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-  // Droppable on the folder header row
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `folder-${folder.id}`,
   });
@@ -193,104 +204,409 @@ function FolderRow({
   }, [renaming]);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      {/* Folder header — this is the drop target */}
-      <div
-        ref={setDropRef}
-        className={cn(
-          "flex items-center gap-0.5 group/folder px-1 py-0.5 rounded transition-colors",
-          isOver ? "bg-accent/30" : "hover:bg-muted/30",
-        )}
-      >
-        <CollapsibleTrigger asChild>
-          <button className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
-            <ChevronRight
-              className={cn(
-                "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                open && "rotate-90",
-              )}
-            />
-            {open ? (
-              <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-            ) : (
-              <Folder className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-            )}
-            {renaming ? (
-              <input
-                ref={renameRef}
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onBlur={commitRename}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitRename();
-                  if (e.key === "Escape") {
-                    setRenameValue(folder.name);
-                    setRenaming(false);
-                  }
-                }}
-                onClick={(e) => e.stopPropagation()}
-                className="flex-1 min-w-0 bg-transparent text-sm outline-none border-b border-primary"
-              />
-            ) : (
-              <span
-                className="flex-1 min-w-0 truncate text-sm font-medium"
-                onDoubleClick={() => setRenaming(true)}
-              >
-                {folder.name}
-              </span>
-            )}
-          </button>
-        </CollapsibleTrigger>
-
-        <div className="flex items-center gap-0.5 opacity-0 group-hover/folder:opacity-100 transition-opacity shrink-0">
-          <button
-            onClick={() => newNoteMutation.mutate()}
-            title="New note in folder"
-            className="p-0.5 rounded hover:bg-accent/30 text-muted-foreground hover:text-foreground"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => {
-              if (
-                confirm(
-                  `Delete folder "${folder.name}"? Notes will be moved to root.`,
-                )
-              )
-                deleteMutation.mutate();
-            }}
-            title="Delete folder"
-            className="p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <CollapsibleContent>
-        <SortableContext
-          id={`folder-${folder.id}`}
-          items={notes.map((n) => n.id)}
-          strategy={verticalListSortingStrategy}
+    <>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <div
+          ref={setDropRef}
+          className={cn(
+            "flex items-center gap-0.5 group/subfolder px-1 py-0.5 rounded transition-colors",
+            isOver ? "bg-accent/30" : "hover:bg-muted/30",
+          )}
         >
-          <div className="ml-5 mt-0.5 flex flex-col gap-0.5">
-            {notes.length === 0 && (
-              <p className="text-xs text-muted-foreground px-2 py-1 italic">
-                Empty folder
-              </p>
-            )}
-            {notes.map((note) => (
-              <SortableNoteItem
-                key={note.id}
-                note={note}
-                selected={selectedId === note.id}
-                onSelect={() => onSelect(note.id)}
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
+              <ChevronRight
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                  open && "rotate-90",
+                )}
               />
-            ))}
+              {open ? (
+                <FolderOpen className="h-3 w-3 shrink-0 text-primary/50" />
+              ) : (
+                <Folder className="h-3 w-3 shrink-0 text-primary/50" />
+              )}
+              {renaming ? (
+                <input
+                  ref={renameRef}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={commitRename}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitRename();
+                    if (e.key === "Escape") {
+                      setRenameValue(folder.name);
+                      setRenaming(false);
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-1 min-w-0 bg-transparent text-sm outline-none border-b border-primary"
+                />
+              ) : (
+                <span
+                  className="flex-1 min-w-0 truncate text-sm"
+                  onDoubleClick={() => setRenaming(true)}
+                >
+                  {folder.name}
+                </span>
+              )}
+            </button>
+          </CollapsibleTrigger>
+
+          <div className="flex items-center gap-0.5 opacity-0 group-hover/subfolder:opacity-100 transition-opacity shrink-0">
+            <button
+              onClick={() => newNoteMutation.mutate()}
+              title="New note in folder"
+              className="p-0.5 rounded hover:bg-accent/30 text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setConfirmDeleteOpen(true)}
+              title="Delete folder"
+              className="p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           </div>
-        </SortableContext>
-      </CollapsibleContent>
-    </Collapsible>
+        </div>
+
+        <CollapsibleContent>
+          <SortableContext
+            id={`folder-${folder.id}`}
+            items={notes.map((n) => n.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="ml-5 mt-0.5 flex flex-col gap-0.5">
+              {notes.length === 0 && (
+                <p className="text-xs text-muted-foreground px-2 py-1 italic">
+                  Empty folder
+                </p>
+              )}
+              {notes.map((note) => (
+                <SortableNoteItem
+                  key={note.id}
+                  note={note}
+                  selected={selectedId === note.id}
+                  onSelect={() => onSelect(note.id)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </CollapsibleContent>
+      </Collapsible>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete folder</DialogTitle>
+            <DialogDescription>
+              Delete{" "}
+              <span className="font-medium text-foreground">
+                "{folder.name}"
+              </span>
+              ? Notes inside will be moved to root.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                deleteMutation.mutate();
+                setConfirmDeleteOpen(false);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ── Folder row ────────────────────────────────────────────────────────────────
+
+function FolderRow({
+  folder,
+  notes,
+  allNotes,
+  subFolders,
+  selectedId,
+  onSelect,
+  projectId,
+}: {
+  folder: NoteFolder;
+  notes: Note[];
+  allNotes: Note[];
+  subFolders: NoteFolder[];
+  selectedId: number | null;
+  onSelect: (id: number) => void;
+  projectId: number;
+}) {
+  const queryClient = useQueryClient();
+  const { showSnackbar } = useSnackbar();
+  const [open, setOpen] = useState(true);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(folder.name);
+  const renameRef = useRef<HTMLInputElement>(null);
+  const [addingSubFolder, setAddingSubFolder] = useState(false);
+  const [newSubFolderName, setNewSubFolderName] = useState("");
+  const subFolderInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  // Droppable on the folder header row
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `folder-${folder.id}`,
+  });
+
+  const renameMutation = useMutation({
+    mutationFn: (name: string) => updateFolder(projectId, folder.id, { name }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["note-folders", projectId] }),
+    onError: () => showSnackbar("Failed to rename folder", "error"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteFolder(projectId, folder.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["note-folders", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["notes", projectId] });
+    },
+    onError: () => showSnackbar("Failed to delete folder", "error"),
+  });
+
+  const newNoteMutation = useMutation({
+    mutationFn: () =>
+      createNote(projectId, { title: "Untitled", folder_id: folder.id }),
+    onSuccess: (note) => {
+      queryClient.invalidateQueries({ queryKey: ["notes", projectId] });
+      onSelect(note.id);
+      setOpen(true);
+    },
+    onError: () => showSnackbar("Failed to create note", "error"),
+  });
+
+  const newSubFolderMutation = useMutation({
+    mutationFn: (name: string) =>
+      createFolder(projectId, { name, parent_id: folder.id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["note-folders", projectId] });
+      setAddingSubFolder(false);
+      setNewSubFolderName("");
+    },
+    onError: () => showSnackbar("Failed to create folder", "error"),
+  });
+
+  function commitRename() {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== folder.name) renameMutation.mutate(trimmed);
+    else setRenameValue(folder.name);
+    setRenaming(false);
+  }
+
+  function commitSubFolder() {
+    const trimmed = newSubFolderName.trim();
+    if (trimmed) newSubFolderMutation.mutate(trimmed);
+    else {
+      setAddingSubFolder(false);
+      setNewSubFolderName("");
+    }
+  }
+
+  useEffect(() => {
+    if (renaming) renameRef.current?.select();
+  }, [renaming]);
+
+  useEffect(() => {
+    if (addingSubFolder) {
+      setOpen(true);
+      subFolderInputRef.current?.focus();
+    }
+  }, [addingSubFolder]);
+
+  return (
+    <>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        {/* Folder header — this is the drop target */}
+        <div
+          ref={setDropRef}
+          className={cn(
+            "flex items-center gap-0.5 group/folder px-1 py-0.5 rounded transition-colors",
+            isOver ? "bg-accent/30" : "hover:bg-muted/30",
+          )}
+        >
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
+              <ChevronRight
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                  open && "rotate-90",
+                )}
+              />
+              {open ? (
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+              ) : (
+                <Folder className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+              )}
+              {renaming ? (
+                <input
+                  ref={renameRef}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={commitRename}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitRename();
+                    if (e.key === "Escape") {
+                      setRenameValue(folder.name);
+                      setRenaming(false);
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-1 min-w-0 bg-transparent text-sm outline-none border-b border-primary"
+                />
+              ) : (
+                <span
+                  className="flex-1 min-w-0 truncate text-sm font-medium"
+                  onDoubleClick={() => setRenaming(true)}
+                >
+                  {folder.name}
+                </span>
+              )}
+            </button>
+          </CollapsibleTrigger>
+
+          <div className="flex items-center gap-0.5 opacity-0 group-hover/folder:opacity-100 transition-opacity shrink-0">
+            <button
+              onClick={() => newNoteMutation.mutate()}
+              title="New note in folder"
+              className="p-0.5 rounded hover:bg-accent/30 text-muted-foreground hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setAddingSubFolder(true)}
+              title="New sub-folder"
+              className="p-0.5 rounded hover:bg-accent/30 text-muted-foreground hover:text-foreground"
+            >
+              <FolderPlus className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setConfirmDeleteOpen(true)}
+              title="Delete folder"
+              className="p-0.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <CollapsibleContent>
+          {/* Sub-folders */}
+          {(subFolders.length > 0 || addingSubFolder) && (
+            <div className="ml-4 mt-0.5 flex flex-col gap-0.5">
+              {subFolders.map((sub) => (
+                <SubFolderRow
+                  key={sub.id}
+                  folder={sub}
+                  notes={allNotes.filter((n) => n.folder_id === sub.id)}
+                  selectedId={selectedId}
+                  onSelect={onSelect}
+                  projectId={projectId}
+                />
+              ))}
+              {addingSubFolder && (
+                <div className="flex items-center gap-1.5 px-1 py-0.5">
+                  <Folder className="h-3 w-3 shrink-0 text-primary/50" />
+                  <input
+                    ref={subFolderInputRef}
+                    value={newSubFolderName}
+                    onChange={(e) => setNewSubFolderName(e.target.value)}
+                    onBlur={commitSubFolder}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitSubFolder();
+                      if (e.key === "Escape") {
+                        setAddingSubFolder(false);
+                        setNewSubFolderName("");
+                      }
+                    }}
+                    placeholder="Folder name…"
+                    className="flex-1 bg-transparent text-sm outline-none border-b border-primary placeholder:text-muted-foreground"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notes directly in this folder */}
+          <SortableContext
+            id={`folder-${folder.id}`}
+            items={notes.map((n) => n.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="ml-5 mt-0.5 flex flex-col gap-0.5">
+              {notes.length === 0 &&
+                subFolders.length === 0 &&
+                !addingSubFolder && (
+                  <p className="text-xs text-muted-foreground px-2 py-1 italic">
+                    Empty folder
+                  </p>
+                )}
+              {notes.map((note) => (
+                <SortableNoteItem
+                  key={note.id}
+                  note={note}
+                  selected={selectedId === note.id}
+                  onSelect={() => onSelect(note.id)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </CollapsibleContent>
+      </Collapsible>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete folder</DialogTitle>
+            <DialogDescription>
+              Delete{" "}
+              <span className="font-medium text-foreground">
+                "{folder.name}"
+              </span>
+              ? Notes and sub-folders inside will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                deleteMutation.mutate();
+                setConfirmDeleteOpen(false);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -325,6 +641,7 @@ export default function NotesPage() {
   const projectId = Number(projectIdStr);
   const queryClient = useQueryClient();
   const { showSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -351,7 +668,66 @@ export default function NotesPage() {
   const selectedNote = localNotes.find((n) => n.id === selectedId) ?? null;
   const rootNotes = localNotes.filter((n) => n.folder_id === null);
 
-  const { editor, saveState } = useNoteEditor(selectedNote, projectId);
+  const notePresence = useNotePresence(selectedId, currentUser?.id);
+
+  const { editor, saveState, reportExternalSave } = useNoteEditor(
+    selectedNote,
+    projectId,
+    (name) =>
+      showSnackbar(
+        `Your changes were saved and overrode a project member's recent edits.`,
+        "success",
+      ),
+    (name) =>
+      showSnackbar(`Your recent changes were overridden by ${name}.`, "error"),
+  );
+
+  // Stable refs so the Echo listener effect doesn't need to re-register on every render
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+  const reportExternalSaveRef = useRef(reportExternalSave);
+  reportExternalSaveRef.current = reportExternalSave;
+
+  // ── Notes-page-specific WebSocket handling ──────────────────────────────────
+  // useProjectChannel (in ProjectShell) already handles query invalidation for
+  // all note/folder events. This effect only adds the extra behaviour that is
+  // specific to the Notes page: overwrite detection and auto-deselection.
+  //
+  // We use Pusher's per-handler unbind() instead of Echo's stopListening() so
+  // that our cleanup does NOT accidentally remove useProjectChannel's handlers
+  // from the shared channel object.
+  useEffect(() => {
+    const echo = getEcho();
+    if (!echo || !projectId) return;
+
+    const channel = echo.private(`project.${projectId}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pusher = (channel as any).subscription as {
+      bind: (event: string, fn: (e: unknown) => void) => void;
+      unbind: (event: string, fn: (e: unknown) => void) => void;
+    };
+    if (!pusher) return;
+
+    const handleNoteUpdated = (e: unknown) => {
+      const event = e as { note: Note };
+      if (event.note?.id === selectedIdRef.current) {
+        reportExternalSaveRef.current(event.note.author?.name ?? "Someone");
+      }
+    };
+
+    const handleNoteDeleted = (e: unknown) => {
+      const event = e as { id: number };
+      if (event.id === selectedIdRef.current) setSelectedId(null);
+    };
+
+    pusher.bind("note.updated", handleNoteUpdated);
+    pusher.bind("note.deleted", handleNoteDeleted);
+
+    return () => {
+      pusher.unbind("note.updated", handleNoteUpdated);
+      pusher.unbind("note.deleted", handleNoteDeleted);
+    };
+  }, [projectId]);
 
   // Sync localNotes from server whenever not mid-drag
   useEffect(() => {
@@ -618,16 +994,24 @@ export default function NotesPage() {
               onDragEnd={handleDragEnd}
             >
               <div className="flex flex-col gap-0.5">
-                {folders.map((folder) => (
-                  <FolderRow
-                    key={folder.id}
-                    folder={folder}
-                    notes={localNotes.filter((n) => n.folder_id === folder.id)}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                    projectId={projectId}
-                  />
-                ))}
+                {folders
+                  .filter((f) => f.parent_id === null)
+                  .map((folder) => (
+                    <FolderRow
+                      key={folder.id}
+                      folder={folder}
+                      notes={localNotes.filter(
+                        (n) => n.folder_id === folder.id,
+                      )}
+                      allNotes={localNotes}
+                      subFolders={folders.filter(
+                        (f) => f.parent_id === folder.id,
+                      )}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                      projectId={projectId}
+                    />
+                  ))}
 
                 {creatingFolder && (
                   <div className="flex items-center gap-1.5 px-2 py-1">
@@ -718,7 +1102,9 @@ export default function NotesPage() {
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  onFocus={() => { isTitleFocusedRef.current = true; }}
+                  onFocus={() => {
+                    isTitleFocusedRef.current = true;
+                  }}
                   onBlur={() => {
                     isTitleFocusedRef.current = false;
                     handleTitleBlur();
@@ -729,6 +1115,24 @@ export default function NotesPage() {
                   className="flex-1 bg-transparent text-xl font-semibold outline-none placeholder:text-muted-foreground truncate"
                   placeholder="Untitled"
                 />
+                {notePresence.length > 0 && (
+                  <div className="flex items-center shrink-0 mr-1">
+                    {notePresence.map((member, i) => (
+                      <div
+                        key={member.id}
+                        title={`${member.name} is viewing this note. Note saves may overlap`}
+                        style={{ zIndex: notePresence.length - i }}
+                        className={cn(
+                          "h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold ring-2 ring-background select-none",
+                          i > 0 && "-ml-1.5",
+                          "bg-primary/20 text-primary",
+                        )}
+                      >
+                        {member.name.charAt(0).toUpperCase()}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
                     variant="ghost"

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { getSections } from "@/api/tasks";
-import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
+import { TaskDetailModal } from "@/components/dashboard/widgets/tasks/TaskDetailModal";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import type { Task, TaskSection } from "@/types/models";
 import type { WidgetProps } from "../widgetRegistry";
